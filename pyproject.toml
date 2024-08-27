@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "RAG_agent"
+version = "0.1.0"
+description = ""
+authors = ["vemi <kolagh@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langgraph = "^0.1.9"
+langchain = "^0.2.10"
+langchain-community = "^0.2.9"
+langchain-nomic = "^0.1.2"
+bs4 = "^0.0.2"
+tiktoken = "^0.7.0"
+chromadb = "^0.5.4"
+nomic = {extras = ["local"], version = "^3.0.45"}
+ollama = "^0.3.0"
+ipython = "^8.26.0"
+neo4j = "^5.22.0"
+neo4j-genai = "^0.3.1"
+llama-index = "^0.10.56"
+llama-index-embeddings-ollama = "^0.1.2"
+feedparser = "^6.0.11"
+haralyzer = "^2.4.0"
+lxml = "^5.3.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

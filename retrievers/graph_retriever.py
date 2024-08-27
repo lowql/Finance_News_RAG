@@ -3,15 +3,14 @@ from typing import List, Dict, Any
 from config import db_config
 
 class Neo4jRetriever:
-    def __init__(self, uri: str, user: str, password: str):
+    def __init__(self, uri, auth):
         """
         Initialize the Neo4jRetriever with connection details.
 
         :param uri: The URI of the Neo4j database.
-        :param user: The username for authentication.
-        :param password: The password for authentication.
+        :param auth: authentication (username,password).
         """
-        self.driver = GraphDatabase.driver(uri, auth=(user, password))
+        self.driver = GraphDatabase.driver(uri, auth=auth)
 
     def close(self):
         """
@@ -31,23 +30,27 @@ class Neo4jRetriever:
             result = session.run(query, parameters)
             return [record.data() for record in result]
 
-    def retrieve_related_nodes(self, cypher_query:str, value: Any = None) -> List[Dict[str, Any]]:
-        """
-        Retrieve related nodes based on a relationship and node property.
-
-        :param query: cypher query
-        :param value: The value of the node property to match.
-        :return: A list of dictionaries representing the related nodes.
-        """
+    def retrieve_suppliers(self,value: Any = None) -> List[Dict[str, Any]]:
+        # HACK: noly 6125 fit 
+        query = """MATCH (n:Company {code:$code}) RETURN n.suppliers"""
         
-        return self.retrieve_by_query(cypher_query, {"value": value})
+        # TODO: build new relation
+        # query = """"MATCH (:Company {code:$code})-[r:supplier]->(p) RETURN p.name LIMIT 25"""
+        
+        return self.retrieve_by_query(query, {"code": value})
 
-
+    def retrieve_competitor(self,value: Any = None) -> List[Dict[str, Any]]:
+        query = """MATCH (:Company {code:$code})-[r:competitor]->(p) RETURN p.name LIMIT 25"""
+        return self.retrieve_by_query(query, {"code": value})
+    
 if __name__ == '__main__':
     
-    retriever = Neo4jRetriever(db_config.Neo4j_URL, db_config.Neo4j_USER, db_config.Neo4j_PWD)
+    retriever = Neo4jRetriever(db_config.Neo4j_URI, db_config.Neo4j_AUTH)
     query = """MATCH (:Company {code:6125})-[r:competitor]->(p) RETURN p.name LIMIT 25"""
-    results = retriever.retrieve_related_nodes(query)
-    for i in results:
-        print(i)
+    
+    results = retriever.retrieve_competitor(6125)
+    [print(i) for i in results]
+    
+    results = retriever.retrieve_suppliers(6125)
+    [print(i) for i in results]
     retriever.close()

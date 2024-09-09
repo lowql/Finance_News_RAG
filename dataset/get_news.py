@@ -2,27 +2,48 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 import argparse
-import time
-
+from utils.path_manager import get_history_news_file
+from pathlib import Path
 # [ ]: 取得公司過去新聞 
 """ 
 觀察下來
 因為台灣的新聞幾乎都是互相抄來抄去
 所以只需要 Yahoo News 就幾乎可以覆蓋所有新聞消息
-
 """ 
-def fetch_data_day_by_day(dataset, data_id, start_date, end_date, token):
-    # 將初始日期和結束日期轉換為 datetime 對象
+
+def current_end_date(start_date,end_date):
+# 將初始日期和結束日期轉換為 datetime 對象
     current_date = datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.strptime(end_date, "%Y-%m-%d")
     
-    # 建立一個空的 DataFrame 來儲存所有天數的資料
-    all_data = pd.DataFrame()
+    csv_file = Path(get_history_news_file(code=6125))
     
+    if csv_file.exists():
+        all_data = pd.read_csv(csv_file,index_col=0)
+        
+        # TypeError: strptime() argument 1 must be str, not Series -> .value[0]
+        last_time = all_data.iloc[[-1]]['date'].values[0]
+
+        format_string = "%Y-%m-%d %H:%M:%S"
+        current_date = datetime.strptime(last_time,format_string)
+        current_date += timedelta(days=1)
+    else:
+        all_data = pd.DataFrame()
+    
+    
+    return current_date,end_date
+
+def fetch_data_day_by_day(dataset, data_id, start_date, end_date, token):
+    
+    current_date,end_date = current_end_date(start_date,end_date)
+    print(f"current date is : {current_date}\nend date is : {end_date}")
+
+    # [ ]: API TOKEN 的限制導致無法一次下載指定區間的資料
+    # 1. 需要可以延續之前下載完成的 {code}_history_news 添加後續區間段的資料
     while current_date <= end_date:
         # 格式化日期為字串
         date_str = current_date.strftime("%Y-%m-%d")
-        
+        print(date_str)
         # 定義 API URL 和請求參數
         url = "https://api.finmindtrade.com/api/v4/data"
         params = {
@@ -31,8 +52,6 @@ def fetch_data_day_by_day(dataset, data_id, start_date, end_date, token):
             "start_date": date_str,
             "token": token
         }
-        
-        # 發送 GET 請求
         response = requests.get(url, params=params)
         
         # 檢查請求是否成功
@@ -48,9 +67,9 @@ def fetch_data_day_by_day(dataset, data_id, start_date, end_date, token):
             print(f"Error: {response.status_code} for date: {date_str}")
             print(response.text)
         
-        # 更新下一個日期
+        # # 更新下一個日期
         current_date += timedelta(days=1)
-    
+
     return all_data
 
 def main():

@@ -4,10 +4,8 @@ from bs4 import BeautifulSoup
 import sys
 import os
 import pandas as pd
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'..', '..','..')))
-print(sys.path)
 from utils.decodeGoogleRss import decode_google_news_url
-from utils.path_manager import get_history_news_file
+from utils.path_manager import get_filter_news_file,get_news_content_file
 
 """
 yahoo finance news web scraper (get_content)
@@ -16,9 +14,9 @@ Created on Sun 2021-06-13 20:01:25
 
 @author: Jack.M.Liu
 """
-def get_info(url):
+def get_info(row):
     #send request   
-    response = requests.get(url)
+    response = requests.get(row['link'])
     #parse    
     soup = BeautifulSoup(response.text,"lxml")
     #get information we need
@@ -29,32 +27,24 @@ def get_info(url):
     list_p = [p.get_text().strip() for p in content.find_all('p')]
     # 將列表中的項目組合成一個會換行的字符串
     pretty_content = '\n'.join(list_p)
-    return author,headline,pretty_content
+    print('.',end='')
+    return pd.Series({'author':author,'headline':headline,'content':pretty_content})
 
 def store_to_pandas(data):
-    df = pd.DataFrame(data=list(data),columns=['author', 'headline', 'content'])
-    df.to_csv('./yahoo_news.csv',index=False)
+    # 6125_history_news: date,stock_id,link,source,title,is_similar
+    df = pd.DataFrame(data=list(data),columns=['date','stock_id','author', 'headline', 'content'])
+    df.to_csv(get_news_content_file(),index=False)
     return 
 
 def main():
-    ok_urls = []
-    with open(get_history_news_file(),'r',encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        
-        for row in reader:
-            if row['source'] == 'Yahoo奇摩股市':
-                try:
-                    url = decode_google_news_url(row['link'])   
-                    if not url.endswith('.html'):
-                        raise Exception("url not pharse complete") 
-                    else:
-                        ok_urls.append(url)
-                except:
-                     print(row['title'],'\n',url,'\n\n')
+    filter_news_path = get_filter_news_file(6125)
+    df = pd.read_csv(filter_news_path)
     
-    news = []
-    for ok_url in ok_urls:
-        news.append(get_info(ok_url))
-        store_to_pandas(news)
+    # date,stock_id,link,source,title,is_similar,available
+    df[['author','headline','content']] = df.apply(get_info,axis=1)
+
+    news_path = get_news_content_file(code=6125)
+    df.to_csv(news_path,columns=['date','stock_id','author','headline','content'],index=False)
+
 if __name__ == '__main__':
     main()

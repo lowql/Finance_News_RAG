@@ -1,0 +1,49 @@
+version: '3.8'
+
+# TODO: 配置合適的reset mode 以及配套的程式邏輯
+services:
+  ollama-container:
+    image: ollama/ollama:latest
+    container_name: ollama-api
+    volumes:
+      - ./data/ollama:/root/.ollama
+    ports:
+      - 11434:11434
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODELS_PATH=/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    network_mode: host
+      
+  neo4j:
+    image: neo4j_for_stock
+    container_name: neo4j-api
+    volumes:
+      - ./docker-neo4j-data:/data
+      - ./docker-neo4j-plugins:/plugins
+    environment:
+      - NEO4J_AUTH=neo4j/stockinfo
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_server_bolt_address=0.0.0.0:7687
+      - NEO4J_server_config_strict__validation_enabled=false #不確定正確的設置，可以暫時禁用嚴格配置驗證
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.* #允許APOC過程
+      - NEO4J_dbms_security_procedures_allowlist=apoc.* #允許APOC過程
+    ports:
+      - 7687:7687
+      - 7474:7474
+    command: neo4j --verbose
+    network_mode: host

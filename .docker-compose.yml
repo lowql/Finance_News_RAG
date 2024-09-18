@@ -24,9 +24,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    network_mode: host
-      
-  neo4j:
+
+  neo4j:    
     image: neo4j_for_stock
     container_name: neo4j-api
     volumes:
@@ -46,4 +45,3 @@ services:
       - 7687:7687
       - 7474:7474
     command: neo4j --verbose
-    network_mode: host

@@ -50,8 +50,6 @@ class BuildPropertyGraph:
         with open(get_llama_index_template('text_qa'), 'r',encoding='utf8') as template_file:
             template = Template(template_file.read())
             self.text_qa_template = template.render
-        
-
     def _schema_llm_extractor(self):
         from llama_index.core.indices.property_graph import SchemaLLMPathExtractor
         neo4j_prompt = neo4j_prompt.format(max_knowledge_triplets=self.max_knowledge_triplets)
@@ -86,7 +84,7 @@ class BuildPropertyGraph:
     def build_index_from_documents(self,documents):
         kg_extractor = self._dynamic_llm_extractor()
         index = PropertyGraphIndex.from_documents(
-            documents[:3],
+            documents,
             use_async = False,
             kg_extractors=[
                 kg_extractor,

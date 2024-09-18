@@ -1,6 +1,7 @@
 from llama_index.core import Document
+from utils.path_manager import get_news_content_file
 documents = []
-with open('./utils/news_crawler/YahooStock/yahoo_news.csv','r',encoding='utf8') as csvfile:
+with open(get_news_content_file(6125),'r',encoding='utf8') as csvfile:
     import csv
     csv_reader = csv.DictReader(csvfile)
     for row in csv_reader:
@@ -31,4 +32,3 @@ if __name__ == "__main__":
     property_graph_index = BuildPropertyGraph()
     property_graph_index._dynamic_llm_extractor()
     property_graph_index.build_index_from_documents(documents=documents)
-    property_graph_index.test_query_engine()

@@ -1,6 +1,9 @@
 ## python 環境安裝
+poetry add pytest times 
+poetry update rq
 poetry install
 poetry shell
+pip install ollama rq hourglass pytest
 pip install llama-index-graph-stores-neo4j llama-index-vector-stores-neo4jvector llama-index-llms-ollama
 
 ## Build 建構新聞知識圖譜
@@ -41,12 +44,20 @@ wsl: 不支援 DNS 通道
 1. 取得 IP addrs
 
 > WSL內部Linux環境的IP地址
+
+from windows host
 ```shell
 wsl hostname -I
-#172.19.72.204
+#<wsl_ip>172.19.72.204
 ```
 
-> Windows主機上為WSL創建的虛擬網卡的IP地址。它充當WSL和外部網絡之間的橋樑
+from wsl 
+```shell
+ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1
+```
+
+> (單純補充::之後的操作不會使用)
+> Windows主機上為WSL創建的虛擬網卡的IP地址。它充當WSL和外部網絡之間的橋樑 
 ```shell
 $ ipconfig 
 ....
@@ -60,9 +71,9 @@ $ ipconfig
 
 2. 設置端口轉發規則
 ```
-netsh interface portproxy add v4tov4 listenport=7474 listenaddress=0.0.0.0 connectport=7474 connectaddress=172.19.72.204
-netsh interface portproxy add v4tov4 listenport=11434 listenaddress=0.0.0.0 connectport=11434 connectaddress=172.19.72.204
-netsh interface portproxy add v4tov4 listenport=7687 listenaddress=0.0.0.0 connectport=7687 connectaddress=172.19.72.204
+netsh interface portproxy add v4tov4 listenport=7474 listenaddress=0.0.0.0 connectport=7474 connectaddress=<wsl_ip>
+netsh interface portproxy add v4tov4 listenport=11434 listenaddress=0.0.0.0 connectport=11434 connectaddress=<wsl_ip>
+netsh interface portproxy add v4tov4 listenport=7687 listenaddress=0.0.0.0 connectport=7687 connectaddress=<wsl_ip>
 ```
 如何檢查?
 ```shell
@@ -84,7 +95,32 @@ Get-NetFirewallRule | Where-Object { $_.DisplayName -eq "WSL Docker 8080" } | Fo
 ```shell
 wsl --shutdown
 ```
-1. 測試連接
+
+2. 檢查 WSL 網路設置
+```
+wsl hostname -I
+```
+
+3. 測試連接
 ```python
 curl http://localhost:11434
+```
+
+
+---
+
+## Docker
+
+### 啟用服務
+```shell
+docker-compose up
+```
+
+### 停用服務
+```shell
+docker-compose down
+```
+### 檢查網路配置效果 (之前有坑)
+```shell
+docker ps
 ```

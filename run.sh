@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 设置Docker Compose文件路径
-COMPOSE_FILE=".docker-compose.yml"
+COMPOSE_FILE="docker-compose.yml"
 # just check flag file
 ENV_CHECK_FILE=".env_check_done"
 
@@ -59,7 +59,7 @@ fi
 start_services() {
     echo "正在启动服务..."
     docker-compose -f $COMPOSE_FILE up -d
-    echo "Run yi model"
+    echo "Pull yi model"
     docker exec -it ollama-api ollama pull yi
     echo "服务已启动。"
 }

@@ -28,6 +28,8 @@ chardet = "^5.2.0"
 pyvis = "^0.3.2"
 schedule = "^1.2.2"
 flask = "^3.0.3"
+times = "^0.7"
+rq = "^1.16.2"
 
 
 [build-system]

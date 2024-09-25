@@ -143,13 +143,13 @@ class Interactive:
 
         print(company_list,"資料下載完成")
     "Duplicates 重複"
-    def csv_re_duplicates(self):
+    def csv_rm_duplicates(self):
         "if company_list[...] 會出現重複的資料"
         df = pd.read_csv(self.dataset_path)
         df.drop_duplicates(inplace = True) 
 if __name__ == '__main__':
     inter = Interactive()
-    inter.csv_re_duplicates()
+    inter.csv_rm_duplicates()
     """ inter.relation_codes[0]
     # {'廣運(6125)': {'suppliers': ['2478',...],... }} 
     """

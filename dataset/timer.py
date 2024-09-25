@@ -32,9 +32,12 @@ def display_countdown(interval_minutes):
 if __name__ == "__main__":
 
     interval = 60  # 設置間隔時間（分鐘）
+    main()
     schedule_script(interval)
 
-    while True:
+    print("timer: ",main())
+    while main() == False:
+        print("API 使用額度已達上限休息1HR")
         display_countdown(interval)
         schedule.run_pending()
         time.sleep(1)

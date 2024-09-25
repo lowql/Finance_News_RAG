@@ -1,8 +1,8 @@
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,date
 import argparse
-from utils.path_manager import get_history_news_file
+from utils.path_manager import get_download_news_file,get_company_relations
 from pathlib import Path
 # [ ]: 取得公司過去新聞 
 """ 
@@ -15,35 +15,36 @@ def current_end_date(start_date,end_date):
 # 將初始日期和結束日期轉換為 datetime 對象
     current_date = datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.strptime(end_date, "%Y-%m-%d")
-    
-    csv_file = Path(get_history_news_file(code=6125))
-    
-    if csv_file.exists():
-        all_data = pd.read_csv(csv_file,index_col=0)
-        
-        # TypeError: strptime() argument 1 must be str, not Series -> .value[0]
-        last_time = all_data.iloc[[-1]]['date'].values[0]
 
+    try:
+        print(f"使用現有的檔案: {csv_file}")
+        all_data = pd.read_csv(csv_file, index_col=0)
+        if all_data.empty:
+            raise Exception("(首次爬取)CSV_File沒有過往寫入的資料") 
+        print("成功讀取 CSV 文件。")
         format_string = "%Y-%m-%d %H:%M:%S"
+        last_time = all_data.iloc[[-1]]['date'].values[0]
         current_date = datetime.strptime(last_time,format_string)
         current_date += timedelta(days=1)
-    else:
-        all_data = pd.DataFrame()
+    except pd.errors.EmptyDataError:
+        print("錯誤: CSV 文件是空的或沒有可解析的列。")
+        all_data = pd.DataFrame()  # 創建一個空的 DataFrame
+    except Exception as e:
+        print(f"發生未預期的錯誤：{str(e)}") #發生未預期的錯誤：positional indexers are out-of-bounds
+        all_data = pd.DataFrame()  # 創建一個空的 DataFrame    
     
-    
-    return current_date,end_date
+    return all_data,current_date,end_date
 
 def fetch_data_day_by_day(dataset, data_id, start_date, end_date, token):
     
-    current_date,end_date = current_end_date(start_date,end_date)
+    all_data,current_date,end_date = current_end_date(start_date,end_date)
     print(f"current date is : {current_date}\nend date is : {end_date}")
 
-    # [ ]: API TOKEN 的限制導致無法一次下載指定區間的資料
-    # 1. 需要可以延續之前下載完成的 {code}_history_news 添加後續區間段的資料
+    # [x]: API TOKEN 的限制導致無法一次下載指定區間的資料 ok
     while current_date <= end_date:
         # 格式化日期為字串
         date_str = current_date.strftime("%Y-%m-%d")
-        print(date_str)
+        print(f"\r{date_str}",end="",flush=True)
         # 定義 API URL 和請求參數
         url = "https://api.finmindtrade.com/api/v4/data"
         params = {
@@ -64,29 +65,53 @@ def fetch_data_day_by_day(dataset, data_id, start_date, end_date, token):
             else:
                 print(f"No data found for date: {date_str}")
         else:
-            print(f"Error: {response.status_code} for date: {date_str}")
+            print(f"\nError: {response.status_code} for date: {date_str}")
             print(response.text)
+            all_data.to_csv(csv_file)
+            print("當前資料已儲存")
+            if response.status_code == 402:
+                return False, all_data
+            
+            return True,all_data
         
         # # 更新下一個日期
         current_date += timedelta(days=1)
 
-    return all_data
+    all_data.to_csv(csv_file)
+    return True,all_data
 
 def main():
-    # 設定 argparse 來接收命令行參數
-    parser = argparse.ArgumentParser(description='Fetch data from FinMind API')
-    parser.add_argument('data_id', type=str, help='The data_id to fetch data for')
-    args = parser.parse_args()
-
+    global csv_file 
+    relation_path = get_company_relations()
+    relation_codes = pd.read_csv(relation_path,usecols=['code'])
+    relation_codes = relation_codes['code'].tolist()
+    
     # 設定參數
     dataset = "TaiwanStockNews"
     start_date = "2023-01-01"
-    end_date = "2024-01-01"  # 替換為所需的結束日期
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wNy0wMyAxNToxMTo0NCIsInVzZXJfaWQiOiJ2ZW1pICIsImlwIjoiMS4yMDAuMTEzLjIwMSJ9.YFuB8XlDRdht0dVWEFDnTEY7vaJUV69alb4Mi5e4gUg"
+    end_date = date.today().strftime("%Y-%m-%d")  # Get current date
+    print(f"start date is : {start_date} \ end date is : {end_date}")
     
+    """ FinMind password 
+    1. FINAPI@project#1
+    ! gemail.yuntech 無法使用 :(, 註冊信箱只能使用 gmail, yahoo .... 
+    """
+    token = ["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wOS0xMCAwODo0OToxNiIsInVzZXJfaWQiOiJ2ZW1pICIsImlwIjoiMTE2Ljg5LjEyOS4yMjYifQ.D3-9kT706HQWGLuYTvGaji_SxmFJI_ReUgd5QIqlqTk"]
     # 獲取資料
-    data = fetch_data_day_by_day(dataset, args.data_id, start_date, end_date, token)
-    print(data)
+    
+    for code in relation_codes:
+        code = str(code)
+        csv_file= Path(get_download_news_file(code))    
+        print("csv file path is : ",csv_file)
+        data = fetch_data_day_by_day(dataset, code, start_date, end_date, token[0])
+        status, data = data
+        if status == False:
+             return False
+        else:
+            print(data)
+           
+        
+    return True
 
 if __name__ == "__main__":
     main()

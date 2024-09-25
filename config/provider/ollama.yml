@@ -1,5 +1,0 @@
-model:
-  name: llama3.1
-
-api:
-  embedding: 'http://localhost:11434/api/embeddings'

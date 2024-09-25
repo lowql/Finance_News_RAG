@@ -83,15 +83,22 @@ def test_TextToCypherRetriever():
     from llama_index.core.indices.property_graph import TextToCypherRetriever
 
     DEFAULT_RESPONSE_TEMPLATE = (
-        "Generated Cypher query:\n{query}\n\n" "Cypher Response:\n{response}"
+        "Generated Cypher query:\n{query}\n\n" 
+        "Cypher Response:\n{response}"
+       
+        
     )
     DEFAULT_ALLOWED_FIELDS = ["text", "label", "type"]
 
-    DEFAULT_TEXT_TO_CYPHER_TEMPLATE = (
-        index.property_graph_store.text_to_cypher_template,
-    )
-
-
+    from llama_index.core.prompts import PromptTemplate
+    from utils.path_manager import get_llama_index_template
+    with open(get_llama_index_template('cypher'), 'r',encoding='utf8') as template_file:
+        TEXT_TO_CYPHER_TEMPLATE_STR =  template_file.read()
+        
+    DEFAULT_TEXT_TO_CYPHER_TEMPLATE = PromptTemplate(TEXT_TO_CYPHER_TEMPLATE_STR)
+    print(DEFAULT_TEXT_TO_CYPHER_TEMPLATE)
+    
+    
     cypher_retriever = TextToCypherRetriever(
         index.property_graph_store,
         # customize the LLM, defaults to Settings.llm
@@ -107,7 +114,21 @@ def test_TextToCypherRetriever():
         # allowed fields in the resulting
         allowed_output_field=DEFAULT_ALLOWED_FIELDS,
     )
+    print(f"\n Graph Schema: {graph_store.get_schema_str()}\n\n")
+    print(f"\n cypher template: {graph_store.text_to_cypher_template}\n\n")
+    
+    from llama_index.core.schema import QueryBundle
+    # Create a query bundle
+    query_bundle = QueryBundle(
+        query_str =["廣運"]
+    )
 
+    # Retrieve nodes from the graph store using the vector store query
+    nodes_with_scores = cypher_retriever.retrieve_from_graph(query_bundle)
+    print(nodes_with_scores)
+    graph_store.close()
+    
+    
 def test_CypherTemplateRetriever():
     # NOTE: current v1 is needed
     from pydantic import BaseModel, Field
@@ -115,9 +136,9 @@ def test_CypherTemplateRetriever():
 
     # write a query with template params
     cypher_query = """
-    MATCH (c:Chunk)-[:MENTIONS]->(o)
-    WHERE o.name IN $names
-    RETURN c.text, o.name, o.label;
+        MATCH (c:Chunk)-[:MENTIONS]->(o)
+        WHERE o.name IN $names
+        RETURN c.text, o.name, o.label;
     """
 
 
@@ -134,7 +155,10 @@ def test_CypherTemplateRetriever():
     template_retriever = CypherTemplateRetriever(
         index.property_graph_store, TemplateParams, cypher_query
     )
-    
+    return template_retriever
 def test_add_sub_retriever():
     # create a retriever
     retriever = index.as_retriever(sub_retrievers=[retriever1, retriever2, ...])
+
+if __name__ == "__main__":
+    print('\n\n',test_CypherTemplateRetriever(),'\n\n')

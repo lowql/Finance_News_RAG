@@ -1,17 +1,7 @@
 from utils.test_tools import fetch_documents
 from llama_index.llms.ollama import Ollama
-llm = Ollama(model='yi',request_timeout=360)
+from retrievers.llama_index.pg_query import pg_query,graph_store,index,pg_retriever_query
 
-from llama_index.embeddings.ollama import OllamaEmbedding
-ollama_embedding = OllamaEmbedding(
-    model_name="yi",
-    base_url="http://localhost:11434",
-    ollama_additional_kwargs={"mirostat": 0}
-)
-
-from llama_index.core import Settings
-Settings.llm =  llm
-Settings.embed_model = ollama_embedding
 def build_kg_not_clean(neo4j_connection):
     documents = fetch_documents()
     driver = neo4j_connection
@@ -19,27 +9,84 @@ def build_kg_not_clean(neo4j_connection):
     index = driver.build_index_from_documents(documents=documents)
     return driver,index
 
-def test_PropertyGraphIndex():
-    """ It is recommended to use the PropertyGraphIndex and associated retrievers instead.) -- Deprecated since version 0.10.53.  """  
-    from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
-    from config.db_config import Neo4j_USER,Neo4j_PWD,Neo4j_URI
-    graph_store = Neo4jPropertyGraphStore(
-            username=Neo4j_USER,
-            password=Neo4j_PWD,
-            url=Neo4j_URI,
+def test_structured_query_1():
+    graph_store.structured_query("""
+        CREATE VECTOR INDEX entity IF NOT EXISTS
+        FOR (m:`__Entity__`)
+        ON m.embedding
+        OPTIONS {indexConfig: {
+            `vector.dimensions`:4096,
+            `vector.similarity_function`: 'cosine'
+        }}
+    """)
+    graph_store.close()
+def test_structured_query_2():
+    similarity_threshold = 0.9
+    word_edit_distance = 5
+    data = graph_store.structured_query("""
+        MATCH (e:__Entity__)
+        CALL {
+        WITH e
+        CALL db.index.vector.queryNodes('entity', 10, e.embedding)
+        YIELD node, score
+        WITH node, score
+        WHERE score > toFLoat($cutoff)
+            AND (toLower(node.name) CONTAINS toLower(e.name) OR toLower(e.name) CONTAINS toLower(node.name)
+                OR apoc.text.distance(toLower(node.name), toLower(e.name)) < $distance)
+            AND labels(e) = labels(node)
+        WITH node, score
+        ORDER BY node.name
+        RETURN collect(node) AS nodes
+        }
+        WITH distinct nodes
+        WHERE size(nodes) > 1
+        WITH collect([n in nodes | n.name]) AS results
+        UNWIND range(0, size(results)-1, 1) as index
+        WITH results, index, results[index] as result
+        WITH apoc.coll.sort(reduce(acc = result, index2 IN range(0, size(results)-1, 1) |
+                CASE WHEN index <> index2 AND
+                    size(apoc.coll.intersection(acc, results[index2])) > 0
+                    THEN apoc.coll.union(acc, results[index2])
+                    ELSE acc
+                END
+        )) as combinedResult
+        WITH distinct(combinedResult) as combinedResult
+        // extra filtering
+        WITH collect(combinedResult) as allCombinedResults
+        UNWIND range(0, size(allCombinedResults)-1, 1) as combinedResultIndex
+        WITH allCombinedResults[combinedResultIndex] as combinedResult, combinedResultIndex, allCombinedResults
+        WHERE NOT any(x IN range(0,size(allCombinedResults)-1,1) 
+            WHERE x <> combinedResultIndex
+            AND apoc.coll.containsAll(allCombinedResults[x], combinedResult)
         )
-    from llama_index.core import PropertyGraphIndex
-    index = PropertyGraphIndex.from_existing(
-        property_graph_store=graph_store,
-        use_async = False,
-    )
-    # create a retriever
-    # retriever = index.as_retriever(sub_retrievers=[retriever1, retriever2, ...])
+        RETURN combinedResult  
+    """, param_map={'cutoff': similarity_threshold, 'distance': word_edit_distance})
+    for row in data:
+        print(row)
+    graph_store.close()   
 
-    # create a query engine
+
+def test_PropertyGraphIndex():
     query_engine = index.as_query_engine()
     response = query_engine.query("廣運供應商?")
-    print(str(response))
+    print(response)
+    
+import pytest
+questions = [
+    "廣運的競爭對手?", 
+    "廣運的合作夥伴?",
+    "廣運跟黃仁勳有關係嗎?",
+    "廣運的股東會議發生的哪些事情?"
+]
+@pytest.mark.parametrize("query_txt", questions)
+def test_retriever_pg(query_txt):
+    print('-------------------------------',query_txt,'-------------------------------')
+    from llama_index.core.response_synthesizers import ResponseMode
+    pg_retriever_query(
+        query_txt=query_txt,
+        response_mode=ResponseMode.NO_TEXT
+    )
+    
 # python -m pytest .\tests\query\test_property_graph_query.py::test_knowledgeGraphQueryEngine
 def test_knowledgeGraphQueryEngine():
     from llama_index.core.query_engine import KnowledgeGraphQueryEngine

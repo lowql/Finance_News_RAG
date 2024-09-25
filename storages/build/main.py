@@ -14,21 +14,11 @@ with open(get_news_content_file(6125),'r',encoding='utf8') as csvfile:
             ))
         
 from llama_index.core import Settings
-
-from llama_index.embeddings.ollama import OllamaEmbedding
-ollama_embedding = OllamaEmbedding(
-    model_name="yi",
-    base_url="http://localhost:11434",
-    ollama_additional_kwargs={"mirostat": 0}
-)
-Settings.embed_model = ollama_embedding
-
-from llama_index.llms.ollama import Ollama
-llm = Ollama(model='yi',request_timeout=360)
-Settings.llm = llm
+from setup import get_embed_model,get_llm
+Settings.llm = get_llm()
+Settings.embed_model = get_embed_model()
 
 if __name__ == "__main__":
     from storages.build.property_graph import BuildPropertyGraph
     property_graph_index = BuildPropertyGraph()
-    property_graph_index._dynamic_llm_extractor()
-    property_graph_index.build_index_from_documents(documents=documents)
+    property_graph_index.build_index_from_documents(documents=documents[:3])

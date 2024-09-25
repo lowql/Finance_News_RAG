@@ -14,6 +14,9 @@ Settings.embed_model = ollama_embedding
 from llama_index.llms.ollama import Ollama
 llm = Ollama(model='yi',request_timeout=360)
 Settings.llm = llm
+
+from utils.path_manager import get_llama_index_template
+from jinja2 import Template
 class BuildPropertyGraph:
     
     def __init__(self):
@@ -36,20 +39,18 @@ class BuildPropertyGraph:
         self.refine_template = ""
         self.index = PropertyGraphIndex.from_documents
     def set_prompt_template(self):
-        from utils.path_manager import get_llama_index_template
-        from jinja2 import Template
-
-        with open(get_llama_index_template('kg_extract'), 'r',encoding='utf8') as template_file:
-            template = Template(template_file.read())
-            max_knowledge_triplets = 3
-            self.kg_extract_templete = template.render(max_knowledge_triplets=max_knowledge_triplets)
-            
         with open(get_llama_index_template('refine'), 'r',encoding='utf8') as template_file:
             template = Template(template_file.read())
             self.refine_template = template.render()
         with open(get_llama_index_template('text_qa'), 'r',encoding='utf8') as template_file:
             template = Template(template_file.read())
             self.text_qa_template = template.render
+        with open(get_llama_index_template('kg_extract'), 'r',encoding='utf8') as template_file:
+            template = Template(template_file.read())
+            max_knowledge_triplets = 3
+            self.kg_extract_templete = template.render(max_knowledge_triplets=max_knowledge_triplets)
+            
+            
     def _schema_llm_extractor(self):
         from llama_index.core.indices.property_graph import SchemaLLMPathExtractor
         neo4j_prompt = neo4j_prompt.format(max_knowledge_triplets=self.max_knowledge_triplets)
@@ -68,21 +69,22 @@ class BuildPropertyGraph:
             num_workers=10,
         )
         return kg_schema_extractor
-    def _dynamic_llm_extractor(self):
+    def _dynamic_llm_extractor(self,extract_prompt):
         from llama_index.core.indices.property_graph import DynamicLLMPathExtractor
-        """ 
-        neo4j.exceptions.ClientError: 
-        {code: Neo.ClientError.Procedure.ProcedureCallFailed} 
-        {message: Failed to invoke procedure `apoc.create.addLabels`: Caused by: org.neo4j.internal.kernel.api.exceptions.schema.IllegalTokenNameException: '' is not a valid token name. Token names cannot be empty or contain any null-bytes.}
-        """
         kg_dynamic_extractor = DynamicLLMPathExtractor(
                     max_triplets_per_chunk=5,
                     num_workers=4,
+                    extract_prompt=extract_prompt,
                     allowed_entity_types=["Company", "News","Items"],
                 )
         return kg_dynamic_extractor
     def build_index_from_documents(self,documents):
-        kg_extractor = self._dynamic_llm_extractor()
+        DYNAMIC_EXTRACT_TMPL = ""
+        with open(get_llama_index_template('dynamic_extract'), 'r',encoding='utf8') as template_file:
+            template = Template(template_file.read())
+            DYNAMIC_EXTRACT_TMPL = template.render()
+    
+        kg_extractor = self._dynamic_llm_extractor(extract_prompt=DYNAMIC_EXTRACT_TMPL)
         index = PropertyGraphIndex.from_documents(
             documents,
             use_async = False,
@@ -90,8 +92,7 @@ class BuildPropertyGraph:
                 kg_extractor,
             ],
             property_graph_store=self.graph_store,
-            show_progress=True,
-                
+            show_progress=True,  
         )
         return index
     

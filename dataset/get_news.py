@@ -1,8 +1,7 @@
 import requests
 import pandas as pd
 from datetime import datetime, timedelta,date
-import argparse
-from utils.path_manager import get_download_news_file,get_company_relations
+from utils.path_manager import get_download_news_file
 from pathlib import Path
 # [ ]: 取得公司過去新聞 
 """ 
@@ -12,7 +11,7 @@ from pathlib import Path
 """ 
 
 def current_end_date(start_date,end_date):
-# 將初始日期和結束日期轉換為 datetime 對象
+    # 將初始日期和結束日期轉換為 datetime 對象
     current_date = datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
@@ -35,17 +34,16 @@ def current_end_date(start_date,end_date):
     
     return all_data,current_date,end_date
 
-def fetch_data_day_by_day(dataset, data_id, start_date, end_date, token):
+def fetch_news_day_by_day(dataset, data_id, start_date, end_date, token):
     
     all_data,current_date,end_date = current_end_date(start_date,end_date)
     print(f"current date is : {current_date}\nend date is : {end_date}")
 
-    # [x]: API TOKEN 的限制導致無法一次下載指定區間的資料 ok
     while current_date <= end_date:
         # 格式化日期為字串
         date_str = current_date.strftime("%Y-%m-%d")
         print(f"\r{date_str}",end="",flush=True)
-        # 定義 API URL 和請求參數
+
         url = "https://api.finmindtrade.com/api/v4/data"
         params = {
             "dataset": dataset,
@@ -69,23 +67,17 @@ def fetch_data_day_by_day(dataset, data_id, start_date, end_date, token):
             print(response.text)
             all_data.to_csv(csv_file)
             print("當前資料已儲存")
-            if response.status_code == 402:
-                return False, all_data
-            
-            return True,all_data
+            return False
         
-        # # 更新下一個日期
+        # 更新下一個日期
         current_date += timedelta(days=1)
 
     all_data.to_csv(csv_file)
-    return True,all_data
+    return True
 
 def main():
     global csv_file 
-    relation_path = get_company_relations()
-    relation_codes = pd.read_csv(relation_path,usecols=['code'])
-    relation_codes = relation_codes['code'].tolist()
-    
+
     # 設定參數
     dataset = "TaiwanStockNews"
     start_date = "2023-01-01"
@@ -96,21 +88,47 @@ def main():
     1. FINAPI@project#1
     ! gemail.yuntech 無法使用 :(, 註冊信箱只能使用 gmail, yahoo .... 
     """
-    token = ["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wOS0xMCAwODo0OToxNiIsInVzZXJfaWQiOiJ2ZW1pICIsImlwIjoiMTE2Ljg5LjEyOS4yMjYifQ.D3-9kT706HQWGLuYTvGaji_SxmFJI_ReUgd5QIqlqTk"]
-    # 獲取資料
+    from dotenv import load_dotenv
+    import os
+
+    load_dotenv(dotenv_path='.env')
+    finmind_token = os.getenv("finmind_token")
+    token = [finmind_token]
     
-    for code in relation_codes:
+    
+    # 確保目錄存在
+    os.makedirs('./dataset/download', exist_ok=True)
+
+    # 檔案路徑
+    record_file_path = './dataset/download/record.txt'
+
+    # 確保文件存在，如果不存在則創建
+    if not os.path.exists(record_file_path):
+        open(record_file_path, 'x').close()
+
+    # 獲取資料
+    from dataset.download.helper import need_to_download_company
+    unique_codes = need_to_download_company()
+    print(f"本次下載企業 {unique_codes}")
+    for code in unique_codes:
         code = str(code)
         csv_file= Path(get_download_news_file(code))    
         print("csv file path is : ",csv_file)
-        data = fetch_data_day_by_day(dataset, code, start_date, end_date, token[0])
-        status, data = data
+        
+        try:
+            df = pd.read_csv(csv_file)
+            start_date = df.loc[:,'date'].tolist()[-1]
+            print(f"上次最後下載日期:  {start_date} ~ {end_date}")
+        except: 
+            print(f"本次為全新下載: {start_date} ~ {end_date}")
+        status = fetch_news_day_by_day(dataset, code, start_date, end_date, token[0])
         if status == False:
              return False
-        else:
-            print(data)
+        if status == True:
+            print("成功下載")
+            with open('./dataset/download/record.txt','a',encoding='utf8') as record:
+                record.write(f"{code},")
            
-        
     return True
 
 if __name__ == "__main__":

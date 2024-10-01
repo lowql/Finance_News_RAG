@@ -1,0 +1,182 @@
+{
+  "main": {
+    "id": "4e4c7c4859b85d7b",
+    "type": "split",
+    "children": [
+      {
+        "id": "58bb5589a83ba6e7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ef26b257e9c0acee",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PG_design.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "182ee69fd36c7bd8",
+            "type": "leaf",
+            "state": {
+              "type": "image",
+              "state": {
+                "file": "Image/breakingNewsAlert (1).png"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f879e0869f5ef978",
+    "type": "split",
+    "children": [
+      {
+        "id": "e08ef994e3a9c245",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7532af2ad2191c30",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "705210fcea6aafb1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "e6c1c870b9913d90",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "62370aee2ed9dc50",
+    "type": "split",
+    "children": [
+      {
+        "id": "26b6fc7b2f4b9c59",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1699214fee3a8067",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "PG_design.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "0abd74fae48f6217",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "PG_design.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "9ec4ecb75ccdf61a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "39c8f8b3cb30f1f7",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "PG_design.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "ef26b257e9c0acee",
+  "lastOpenFiles": [
+    "不同新聞資料的策略.md",
+    "PG_design.md",
+    "Image/breakingNewsAlert (1).png",
+    "retriever.md",
+    "Response_Synthesis.md",
+    "Readme.md",
+    "可能需要交接的功能.md",
+    "Image",
+    "Welcome.md",
+    "Image/PopularStock (3).png",
+    "Image/PopularStock (2).png",
+    "Image/PopularStock (1).png",
+    "Image/news_Revenue (2).png",
+    "Image/news_Revenue (1).png",
+    "Image/news_preprocess.md",
+    "Image/news_Other (3).png",
+    "Image/news_Other (2).png",
+    "Image/news_Other (1).png",
+    "Image/image-3.png"
+  ]
+}

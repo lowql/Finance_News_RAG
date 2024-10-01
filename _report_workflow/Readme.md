@@ -11,13 +11,4 @@
             2. TODO: 評估 llm 對不同內容形式的提取形式
             3. TODO: 設計 cypher query
     2. vector 
-        1. 
-
-
-```mermaid
-graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
-```
+       1.  進階研究

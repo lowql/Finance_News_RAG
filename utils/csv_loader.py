@@ -41,7 +41,6 @@ if __name__ == "__main__":
     documents = df['content'].tolist()
     metadatas = df[['source']].to_dict('records')
 
-    # HACK: 
     ids = df['id'].tolist()
 
     # 使用提取的數據調用 add 方法

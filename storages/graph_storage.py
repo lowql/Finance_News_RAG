@@ -86,7 +86,7 @@ class Neo4jStorage:
         # HACK: 理論上來說重新建構CYPHER速度會更快
         [self.add_company(code) for code in codes]
             
-    # [x] 
+ 
     def add_company_interactive(self,code):
         """ 
             添加公司互動 from dataset_path

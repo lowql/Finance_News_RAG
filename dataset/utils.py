@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.font_manager as fm
 
+# headline,author,time,content
 def inspect(df,pattern):
     print('='*30,pattern,'='*30)
-    match_df = df[df['title'].str.contains(pat = pattern, regex = True)].loc[:,['title','link']]
-    print(match_df,'\n')
+    match_df = df[df['headline'].str.contains(pat = pattern, regex = True)].loc[:,['author','headline','content']]
     for i in range(len(match_df.index)):
-        print(match_df.iloc[i]['title'])
-        print(match_df.iloc[i]['link'])
+        print(f"【消息源({df.iloc[i]['author']}) :: {match_df.iloc[i]['headline']}】")
+        print(match_df.iloc[i]['content'])
         print("="*100,'\n')
     
 def inspects(df):
@@ -101,5 +101,6 @@ if __name__ == '__main__':
     for code in codes:
         print(f"analyze {code}")
         analyze = Analyze(code)
-        analyze.publish_distribution()
-        print("="*50)
+        inspects(analyze.df)
+        # analyze.publish_distribution()
+        # print("="*50)

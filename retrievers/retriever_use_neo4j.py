@@ -29,8 +29,11 @@ class Neo4jRetriever:
         with self.driver.session() as session:
             result = session.run(query, parameters)
             return [record.data() for record in result]
-    # [ ] : 取得特定節點的 attributes
+
     def retrieve_node_attributes(self,id,attributes):
+        """ 
+            取得特定節點的 attributes
+        """
         # HACK: 使用一般手段查詢節點的屬性必須預先固定
         query = """
         MATCH (n:Company {code:$code})

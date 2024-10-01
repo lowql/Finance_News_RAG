@@ -1,11 +1,3 @@
-# 版本衝突 
-# Because no versions of llama-index-embeddings-ollama match >0.1.2,<0.1.3 || >0.1.3,<0.2.0
-
-# HACK: 忽略版本問題直接安裝 llama-index-graph-stores-neo4j 使用 pip install
-# %poetry add llama-index-graph-stores-neo4j
-
-# HACK: 忽略版本問題直接安裝 llama-index-vector-stores-neo4jvector 使用 pip install
-# %poetry add llama-index-vector-stores-neo4jvector
 
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core import PropertyGraphIndex

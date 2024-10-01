@@ -86,11 +86,12 @@ class Neo4jStorage:
         # HACK: 理論上來說重新建構CYPHER速度會更快
         [self.add_company(code) for code in codes]
             
-    # [x] 添加公司互動 from dataset_path
+    # [x] 
     def add_company_interactive(self,code):
         """ 
-        code,name,suppliers,customers,competitor,strategic_alliance,invested 
-        6125,廣運   ,....
+            添加公司互動 from dataset_path
+            code,name,suppliers,customers,competitor,strategic_alliance,invested 
+            6125,廣運   ,....
         """
         prepared_statement = """
         MERGE (c1:Company {name: $c1_name, code:$c1_code})

@@ -4,7 +4,9 @@ poetry add pytest times
 poetry shell
 pip install ollama llama-index-program-lmformatenforcer
 pip install lm-format-enforcer
-pip install llama-index-graph-stores-neo4j llama-index-vector-stores-neo4jvector llama-index-llms-ollama
+pip install llama-index-graph-stores-neo4j 
+pip install llama-index-vector-stores-neo4jvector 
+pip install llama-index-llms-ollama
 
 ## Build 建構新聞知識圖譜
 

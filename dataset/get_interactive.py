@@ -7,8 +7,6 @@ from typing import List,Dict,Any
 from pprint import pprint
 import os
 
-# [x]: 外部查詢公司互動 
-# python -m dataset.get_interactive
 class Interactive:
     def __init__(self):
         self.dataset_path = './dataset/base/company_relations.csv'
@@ -115,7 +113,7 @@ class Interactive:
         2303,聯電,[..,..,..],...
         """
         Interactive_info = []   
-        # [x]: 儲存於CSV使用pandas
+
         for code in company_list:
             result = inter.parse_from_url(int(code))
             company_data = {

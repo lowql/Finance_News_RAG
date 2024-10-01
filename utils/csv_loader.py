@@ -42,10 +42,3 @@ if __name__ == "__main__":
     metadatas = df[['source']].to_dict('records')
 
     ids = df['id'].tolist()
-
-    # 使用提取的數據調用 add 方法
-    collection.add(
-        documents=documents,
-        metadatas=metadatas,
-        ids=ids
-    )

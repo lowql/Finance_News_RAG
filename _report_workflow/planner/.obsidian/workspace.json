@@ -4,7 +4,7 @@
     "type": "split",
     "children": [
       {
-        "id": "58bb5589a83ba6e7",
+        "id": "322e00cf4b99dfff",
         "type": "tabs",
         "children": [
           {
@@ -18,14 +18,22 @@
                 "source": false
               }
             }
-          },
+          }
+        ]
+      },
+      {
+        "id": "58bb5589a83ba6e7",
+        "type": "tabs",
+        "children": [
           {
-            "id": "182ee69fd36c7bd8",
+            "id": "abcc4daf7755e3d0",
             "type": "leaf",
             "state": {
-              "type": "image",
+              "type": "markdown",
               "state": {
-                "file": "Image/breakingNewsAlert (1).png"
+                "file": "不同新聞資料的策略.md",
+                "mode": "source",
+                "source": false
               }
             }
           }
@@ -140,12 +148,12 @@
               }
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -157,15 +165,15 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "ef26b257e9c0acee",
+  "active": "39c8f8b3cb30f1f7",
   "lastOpenFiles": [
     "不同新聞資料的策略.md",
+    "可能需要交接的功能.md",
     "PG_design.md",
     "Image/breakingNewsAlert (1).png",
     "retriever.md",
     "Response_Synthesis.md",
     "Readme.md",
-    "可能需要交接的功能.md",
     "Image",
     "Welcome.md",
     "Image/PopularStock (3).png",

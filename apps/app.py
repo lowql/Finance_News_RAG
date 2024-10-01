@@ -31,7 +31,7 @@ def get_news(stock_id):
 
 @app.get("/query")
 def query_index():
-    # http://localhost:5000/query?text=廣運的產品是?
+    # http://localhost:5000/query?text="廣運的產品是?"
     query_text = request.args.get("text", None)
     import sys
     print(sys.path)
@@ -44,8 +44,8 @@ def query_index():
             400,
         )
     # Now you can import your modules
-    from retrievers.llama_index.pg_query import query
-    response = query(query_text)
+    from retrievers.llama_index.pg_query import pg_query
+    response = pg_query(query_text)
     return str(response), 200
 
 app.run()

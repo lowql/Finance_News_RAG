@@ -1,21 +1,16 @@
 import nest_asyncio
-
 # httpx.ReadTimeout
 # sys:1: RuntimeWarning: coroutine 'SchemaLLMPathExtractor._aextract' was never awaited
 nest_asyncio.apply()
-
-from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.core import Settings
-from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 username = "neo4j"
 password = "stockinfo"
-url = "bolt://localhost:7687"
+url = "bolt://127.0.0.1:7687"
 embed_dim = 4096
 
-from llama_index.embeddings.ollama import OllamaEmbedding
 # embed_model = OpenAIEmbedding(embed_batch_size=42)
+from llama_index.embeddings.ollama import OllamaEmbedding
 ollama_embedding = OllamaEmbedding(
     model_name="yi",
     base_url="http://localhost:11434",
@@ -29,6 +24,7 @@ llm = Ollama(model='yi',request_timeout=360)
 Settings.llm = llm
 
 
+from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
 vector_store = Neo4jVectorStore(
     username, 
     password, 
@@ -53,17 +49,20 @@ with open('./utils/news_crawler/YahooStock/yahoo_news.csv','r',encoding='utf8') 
             text_template="Metadata:\n {metadata_str}\n-----\nContent: {content}",
             ))
 
+from llama_index.core import VectorStoreIndex
 index = VectorStoreIndex.from_documents       
 def build_vectorindex():
     from llama_index.core import StorageContext
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
             
     index = VectorStoreIndex.from_documents(
-        documents[:3], storage_context=storage_context
+        documents[:3], storage_context=storage_context,
+        max_triplets_per_chunk=2,
     )
 
 from llama_index.core import PropertyGraphIndex
 index = PropertyGraphIndex.from_documents
+
 from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
 graph_store = Neo4jPropertyGraphStore(
     username=username,
@@ -144,29 +143,81 @@ def build_property_graph_index():
         ],
         property_graph_store=graph_store,
         show_progress=True,
-        
-)
+            
+    )
 
-# loading from existing graph store (and optional vector store)
-# load from existing graph/vector store
-index = PropertyGraphIndex.from_existing(
-    property_graph_store=graph_store, 
-    vector_store=vector_store, 
-    embed_kg_nodes=True,
-    use_async = False,# httpx.ReadTimeout
-)
-# Define retriever
-retriever = index.as_retriever(
-    include_text=False,  # include source text in returned nodes, default True
+def display_prompt_dict(prompts_dict):
+    for k, p in prompts_dict.items():
+        text_md = f"Prompt Key: {k}\n Text:\n"
+        print(text_md)
+        print(p.get_template(),"\n\n")
+if __name__ == '__main__':
     
-)
+    # build_vectorindex()
+    # build_property_graph_index()
+    # load from existing graph/vector store
+    index = PropertyGraphIndex.from_existing(
+        property_graph_store=graph_store, 
+        vector_store=vector_store, 
+        embed_kg_nodes=True,
+        use_async = False,# httpx.ReadTimeout
+    )
+    # Define retriever
+    retriever = index.as_retriever(
+        include_text=False,  # include source text in returned nodes, default True
+    )
 
-results = retriever.retrieve("請介紹廣運")
-for record in results:
-    print(record.text)
-
-print("\n\n")
-# Question answering
-query_engine = index.as_query_engine(include_text=True)
-response = query_engine.query("請介紹廣運")
-print(str(response))
+    # # Question answering
+    from llama_index.core import get_response_synthesizer
+    
+    from llama_index.core import PromptTemplate
+    text_qa_template = """
+    你現在是資深的市場消息分析師，請根據以下內容使用繁體中文，回覆問題
+    請確保你的專業性，回答請根據以下提供的資訊內容
+    ```md
+    {context_str}
+    ```
+    Query: {query_str}
+    Answer:
+    """
+    text_qa_template = PromptTemplate(text_qa_template)
+    refine_template = """
+    以下是原始的內容: {query_str}
+    以下是既有回復: {existing_answer}
+    請根據以下的額外資訊進一步優化回復內容:
+    ```md
+    {context_msg}
+    ```
+    請根據以上內容重新整理出更專業的回覆，如果重新整理的內容不理想，使用原有的內容。
+    重新整理的回復:
+    """
+    refine_template = PromptTemplate(refine_template)
+    synth = get_response_synthesizer(response_mode="refine",streaming=True,refine_template=refine_template,text_qa_template=text_qa_template)
+    
+    
+    from llama_index.core.query_engine import RetrieverQueryEngine
+    
+    from llama_index.core.postprocessor import SimilarityPostprocessor
+    query_engine = RetrieverQueryEngine(
+        retriever=retriever,
+        response_synthesizer = synth,
+        node_postprocessors=[
+            SimilarityPostprocessor(similarity_cutoff=0.7)  # 设置相似度阈值
+        ]
+    )
+    query_engine.from_args(
+        retriever=retriever,
+        response_mode= 'compact',
+        verbose=False,
+        
+    )
+    display_prompt_dict(query_engine.get_prompts())
+    response = query_engine.query("請介紹廣運")
+    response.print_response_stream()
+    print("格式化引文:", response.get_formatted_sources())  # 获取格式化的引文
+    # print(response.source_nodes)
+    for node in response.source_nodes:
+        print(f"Node ID: {node.node_id}")
+        print(f"Content: {node.get_content()}")
+            
+    print(len(response.source_nodes))

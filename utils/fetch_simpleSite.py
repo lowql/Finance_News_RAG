@@ -11,7 +11,5 @@ def main():
     print(soup.main.get_text())
     save_soup(soup.main.get_text(separator="\n"))
     
-    
-    
 if __name__ == '__main__':
     main()

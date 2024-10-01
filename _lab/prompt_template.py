@@ -1,10 +1,11 @@
 from llama_index.core import PropertyGraphIndex
 
-from llama_index.core import Settings
-from setup import get_embed_model,get_llm,get_graph_store
+from setup import get_graph_store
 from utils.test_tools import display_prompt_dict
 from utils.get import get_prompt_template
 
+from llama_index.core import Settings
+from setup import get_embed_model,get_llm
 Settings.llm = get_llm()
 Settings.embed_model = get_embed_model()
 def update_query_prompt(query_engine):

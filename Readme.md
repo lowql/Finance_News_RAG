@@ -1,9 +1,9 @@
 ## python 環境安裝
-poetry add pytest times 
-poetry update rq
 poetry install
+poetry add pytest times 
 poetry shell
-pip install ollama rq hourglass pytest
+pip install ollama llama-index-program-lmformatenforcer
+pip install lm-format-enforcer
 pip install llama-index-graph-stores-neo4j llama-index-vector-stores-neo4jvector llama-index-llms-ollama
 
 ## Build 建構新聞知識圖譜

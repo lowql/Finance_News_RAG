@@ -81,7 +81,7 @@ def main():
     # 設定參數
     dataset = "TaiwanStockNews"
     start_date = "2023-01-01"
-    end_date = date.today().strftime("%Y-%m-%d")  # Get current date
+    end_date = "2024-01-01"  # Get current date
     print(f"start date is : {start_date} \ end date is : {end_date}")
     
     """ FinMind password 

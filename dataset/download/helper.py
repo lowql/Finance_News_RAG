@@ -13,7 +13,7 @@ def check_code_range(file='6125_history_news.csv'):
         date = df.loc[:,'date'].tolist()
         print(f"from {date[0]} ~ {date[-1]}")
         last_date = datetime.strptime(date[-1], "%Y-%m-%d %H:%M:%S")
-        if last_date > datetime(2024, 8, 1):
+        if last_date > datetime(2024, 1, 1):
             return code
     except FileNotFoundError:
         print(f"This file: {file} does not exist")
@@ -21,6 +21,16 @@ def check_code_range(file='6125_history_news.csv'):
         print(f"An error occurred while processing {file}: {str(e)}")
     
     print()
+
+def update_record():
+    # Use Case 1
+    csv_files = [f for f in listdir(folder_path) if isfile(join(folder_path, f)) and f.endswith('.csv')]
+    codes = []
+    for file in csv_files:
+        code = check_code_range(file)
+        if code is not None:
+            codes.append(code)
+    record(codes)
     
 def record(codes):
     print(codes)
@@ -28,6 +38,7 @@ def record(codes):
     print(f"record codes is {codes}")
     with open(record_file, "w") as f:
         f.write(codes)
+        
 def read_record():
     with open(record_file, "r") as f:
         records = f.read().split(',')
@@ -38,6 +49,7 @@ def need_to_download_company():
     """ 
         回傳下載目標還未達標的關係企業
     """
+    update_record()
     record_codes_str = read_record()
     from utils.path_manager import get_company_relations
     relation_path = get_company_relations()
@@ -48,15 +60,7 @@ def need_to_download_company():
     unique_codes = list(set(relation_codes_str) - set(record_codes_str))
     return unique_codes
 if __name__ == '__main__':
-    # Use Case 1
-    # csv_files = [f for f in listdir(folder_path) if isfile(join(folder_path, f)) and f.endswith('.csv')]
-    # codes = []
-    # for file in csv_files:
-    #     code = check_code_range(file)
-    #     if code is not None:
-    #         codes.append(code)
-    # record(codes)
-    
+
     # Use Case 2
     print(need_to_download_company())
     pass

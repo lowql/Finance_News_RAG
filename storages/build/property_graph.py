@@ -111,8 +111,10 @@ class ManualBuildPropertyGraph:
         relation_path = get_company_relations()
         relation_codes = pd.read_csv(relation_path,usecols=['code','name'])
         code_to_name = dict(zip(relation_codes['code'], relation_codes['name']))
-        name = code_to_name.get(code, "本公司還未上市，抑或是資料庫查無此資料")
-        print(f"len of nodes {len(nodes)}")
+        name = code_to_name.get(int(code), "本公司還未上市，抑或是資料庫查無此資料")
+        print(code,'::',name)
+        print(f"build {code} news property graph")
+        print(f"len of nodes :: {len(nodes)}")
         for node in nodes:
             cypher = """
              MERGE (c:公司 {name: $name, code:$code})
@@ -134,6 +136,7 @@ class ManualBuildPropertyGraph:
         """ 添加公司互動
             code,name,suppliers,customers,competitor,strategic_alliance,invested 
         """
+        print(f"build {code} relation property graph")
         pre_cypher = """
             MERGE (c1:公司 {name: $c1_name, code:$c1_code})
             MERGE (c2:公司 {name: $c2_name})
@@ -141,10 +144,10 @@ class ManualBuildPropertyGraph:
         dataset_path = './dataset/base/company_relations.csv'
         df = pd.read_csv(dataset_path,index_col='code')
         
-        relation_info = df.loc[code]
+        relation_info = df.loc[int(code)]
         params = {}
-        params['c1_name'] = relation_info['name'][:2]
-        params['c1_code'] = int(relation_info['name'][3:-1])
+        params['c1_name'] = relation_info['name'][:-6]
+        params['c1_code'] = int(relation_info['name'][-5:-1])
         
         import ast
         zh_map = {
@@ -167,7 +170,7 @@ class ManualBuildPropertyGraph:
         self.graph_store.close()
         
     def remove_all(self):
-        cmd = input("y|n")
+        cmd = input("do you want to clean all graph? (y|n) : ")
         if cmd == 'n':
             return
         cypher = "MATCH (n) DETACH DELETE n"

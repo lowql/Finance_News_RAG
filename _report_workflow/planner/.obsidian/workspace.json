@@ -4,37 +4,15 @@
     "type": "split",
     "children": [
       {
-        "id": "322e00cf4b99dfff",
+        "id": "4c9671fadbff8ef7",
         "type": "tabs",
         "children": [
           {
-            "id": "ef26b257e9c0acee",
+            "id": "efa9e90c79f177d7",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "PG_design.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          }
-        ]
-      },
-      {
-        "id": "58bb5589a83ba6e7",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "abcc4daf7755e3d0",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "不同新聞資料的策略.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {}
             }
           }
         ]
@@ -87,8 +65,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "62370aee2ed9dc50",
@@ -104,7 +81,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "PG_design.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -121,7 +97,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "PG_design.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -143,9 +118,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "PG_design.md"
-              }
+              "state": {}
             }
           }
         ],
@@ -165,14 +138,16 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "39c8f8b3cb30f1f7",
+  "active": "efa9e90c79f177d7",
   "lastOpenFiles": [
+    "PG_design.md",
+    "cypher.md",
+    "cypher 時間序列.md",
+    "Response_Synthesis.md",
     "不同新聞資料的策略.md",
     "可能需要交接的功能.md",
-    "PG_design.md",
     "Image/breakingNewsAlert (1).png",
     "retriever.md",
-    "Response_Synthesis.md",
     "Readme.md",
     "Image",
     "Welcome.md",

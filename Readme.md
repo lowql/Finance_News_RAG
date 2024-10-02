@@ -7,6 +7,7 @@ pip install lm-format-enforcer
 pip install llama-index-graph-stores-neo4j 
 pip install llama-index-vector-stores-neo4jvector 
 pip install llama-index-llms-ollama
+pip install matplotlib
 
 ## Build 建構新聞知識圖譜
 
@@ -125,4 +126,48 @@ docker-compose down
 ### 檢查網路配置效果 (之前有坑)
 ```shell
 docker ps
+```
+## TroubleShoot 
+```sh
+PS C:\Users\vemi> ollama list
+Error: Head "http://127.0.0.1:11434/": read tcp 127.0.0.1:52220->127.0.0.1:11434: wsarecv: An existing connection was forcibly closed by the remote host.
+```
+
+1. 首先檢查 PORT 的占用
+`netstat -ano | findstr :11434`
+2. 確認占用 PORT 的程序
+`Get-Process -Id 1056`
+3. 結束占用 PORT 的進程
+`Stop-Process -Id 1056 -Force`
+4. 再次檢查 PORT 的狀態
+`netstat -ano | findstr :11434`
+
+other
+1. 查找具體服務
+`tasklist /svc /FI "PID eq 1056"`
+2. 檢查服務詳情
+`Get-Service -Name "服务名称"`
+3. 重啟服務 
+`Restart-Service -Name "服务名称"`
+4. 檢查服務配置 
+`Get-WmiObject win32_service | Where-Object {$_.ProcessId -eq 1056}`
+5. 停止服務
+`Stop-Service -Name "服务名称"`
+6. 驗證服務狀態
+
+警告：
+
+在永久停止任何服务之前，请确保您完全理解该服务的作用及停止它可能带来的影响。
+某些系统服务是 Windows 正常运行所必需的。
+停止这些服务可能会导致系统不稳定或功能丧失。
+
+如果您不确定，最好先将服务设置为手动启动，而不是完全禁用它：
+```powershell
+Set-Service -Name "服务名称" -StartupType Manual
+```
+
+如果在停止服务后遇到任何系统问题，您可以通过将启动类型改回"Automatic"并启动服务来恢复：
+```powershell
+Set-Service -Name "服务名称" -StartupType Automatic
+Start-Service -Name "服务名称"
 ```

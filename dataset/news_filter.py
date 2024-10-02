@@ -40,7 +40,6 @@ if __name__ == "__main__":
     codes = read_record()
     
     for code in codes:
-
         csv_file = get_download_news_file(code)
 
         print(f"filter process {csv_file}")

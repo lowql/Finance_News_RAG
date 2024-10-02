@@ -1,17 +1,10 @@
-""" Package operations: 1 install, 2 updates, 0 removals
-
-  - Downgrading nltk (3.9.1 -> 3.8.1)
-  - Downgrading llama-index-core (0.11.3 -> 0.10.56)
-  - Installing schedule (1.2.2) 
-"""
 import schedule
 import time
-import subprocess
 from datetime import datetime, timedelta
-from dataset.get_news import main
+from dataset.get_news import fetch_FinMind
 def run_script():
     try:
-        main()
+        fetch_FinMind()
         print("成功執行腳本")
     except Exception as e:
         print(f"執行腳本時發生錯誤: {e}")
@@ -33,7 +26,7 @@ if __name__ == "__main__":
 
     interval = 60  # 設置間隔時間（分鐘）
     schedule_script(interval)
-    while main() == False:
+    while fetch_FinMind() == False:
         print("API 使用額度已達上限休息1HR")
         display_countdown(interval)
         schedule.run_pending()

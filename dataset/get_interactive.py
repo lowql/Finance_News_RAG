@@ -1,10 +1,9 @@
 import chardet
 import httpx
-from bs4 import BeautifulSoup,Comment
+from bs4 import BeautifulSoup
 import re
 import pandas as pd
 from typing import List,Dict,Any
-from pprint import pprint
 import os
 
 class Interactive:

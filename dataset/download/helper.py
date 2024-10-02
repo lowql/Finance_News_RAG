@@ -44,7 +44,6 @@ def read_record():
         records = f.read().split(',')
     return records
 
-
 def need_to_download_company():
     """ 
         回傳下載目標還未達標的關係企業

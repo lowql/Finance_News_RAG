@@ -12,7 +12,13 @@ from pathlib import Path
 
 def current_end_date(start_date,end_date):
     # 將初始日期和結束日期轉換為 datetime 對象
-    current_date = datetime.strptime(start_date, "%Y-%m-%d")
+    # ValueError: unconverted data remains:  01:22:21
+    print(start_date)
+    try:
+        current_date = datetime.strptime(start_date, "%Y-%m-%d")
+    except: 
+        current_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+    print(current_date)
     end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
     try:
@@ -21,9 +27,6 @@ def current_end_date(start_date,end_date):
         if all_data.empty:
             raise Exception("(首次爬取)CSV_File沒有過往寫入的資料") 
         print("成功讀取 CSV 文件。")
-        format_string = "%Y-%m-%d %H:%M:%S"
-        last_time = all_data.iloc[[-1]]['date'].values[0]
-        current_date = datetime.strptime(last_time,format_string)
         current_date += timedelta(days=1)
     except pd.errors.EmptyDataError:
         print("錯誤: CSV 文件是空的或沒有可解析的列。")
@@ -75,7 +78,7 @@ def fetch_news_day_by_day(dataset, data_id, start_date, end_date, token):
     all_data.to_csv(csv_file)
     return True
 
-def main():
+def fetch_FinMind():
     global csv_file 
 
     # 設定參數
@@ -132,4 +135,4 @@ def main():
     return True
 
 if __name__ == "__main__":
-    main()
+    fetch_FinMind()

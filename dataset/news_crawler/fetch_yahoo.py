@@ -36,11 +36,12 @@ def main():
     print(codes)
     for code in codes:
         print(f"fetch {code} news",end='')
+        
         filter_news_path = get_filter_news_file(code)
         df = pd.read_csv(filter_news_path)
-        # inspects(df)
         df[['headline','author','time','content']] = df.apply(fetch_new,axis=1) #  return pd.Series({'author':author,'headline':headline,'content':pretty_content})
         df = df.dropna(subset=['headline','author','time','content'])
+        
         news_path = get_news_content_file(code=code)
         df.to_csv(news_path,columns=['headline','author','time','content'],index=False)
         print()

@@ -17,6 +17,7 @@ def inspects(df):
     pattern_list = ['【.*】','營收','盤中速報','焦點股','熱門股','《.*》']
     for pattern in pattern_list:
         inspect(df,pattern)
+        
 def fetch_news(code):
     path = get_news_content_file(code)
     return pd.read_csv(path)

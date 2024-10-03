@@ -41,3 +41,4 @@ def gen_summary(context,mode = 'batch'):
         for completion in completions:
             print(completion.delta, end="")
     return llm.complete(get_prompt(context))
+

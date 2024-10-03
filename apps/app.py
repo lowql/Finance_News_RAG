@@ -44,7 +44,7 @@ def query_index():
             400,
         )
     # Now you can import your modules
-    from retrievers.llama_index.pg_query import pg_query
+    from retrievers.pg_query import pg_query
     response = pg_query(query_text)
     return str(response), 200
 

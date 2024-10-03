@@ -1,5 +1,5 @@
 from utils.test_tools import fetch_documents
-from retrievers.llama_index.pg_query import index,pg_retriever_query
+from retrievers.pg_query import index,pg_retriever_query
 
 def test_PropertyGraphIndex():
     query_engine = index.as_query_engine()

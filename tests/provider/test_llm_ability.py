@@ -23,7 +23,6 @@ context = """
 
 import pytest
 from llama_index.llms.ollama import Ollama
-from llama_index.core import Settings
 
 models = ['llama3.1:latest','jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M ']
 

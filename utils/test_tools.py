@@ -27,6 +27,7 @@ def fetch_documents():
                 text_template="Metadata:\n {metadata_str}\n-----\nContent: {content}",
                 ))
     return documents
+
 def fetch_document_as_df():
     import pandas as pd
     df = pd.read_csv(get_news_content_file(6125),encoding='utf8')

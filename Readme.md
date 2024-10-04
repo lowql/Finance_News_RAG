@@ -82,6 +82,7 @@ netsh interface portproxy add v4tov4 listenport=7687 listenaddress=0.0.0.0 conne
 ```shell
 netsh interface portproxy show all
 ```
+
 3. 設置防火牆規則
 ```
 New-NetFirewallRule -DisplayName "WSL Docker 7474" -Direction Inbound -LocalPort 7474 -Protocol TCP -Action Allow
@@ -89,6 +90,7 @@ New-NetFirewallRule -DisplayName "WSL Docker 11434" -Direction Inbound -LocalPor
 New-NetFirewallRule -DisplayName "WSL Docker 7687" -Direction Inbound -LocalPort 7687 -Protocol TCP -Action Allow
 New-NetFirewallRule -DisplayName "Allow WSL" -Direction Inbound -InterfaceAlias "vEthernet (WSL)" -Action Allow
 ```
+
 如何檢查?
 ```shell
 Get-NetFirewallRule | Where-Object { $_.DisplayName -eq "WSL Docker 8080" } | Format-List -Property DisplayName, Enabled, Direction, Action, Protocol, LocalPort
@@ -134,26 +136,35 @@ Error: Head "http://127.0.0.1:11434/": read tcp 127.0.0.1:52220->127.0.0.1:11434
 ```
 
 1. 首先檢查 PORT 的占用
-`netstat -ano | findstr :11434`
+netstat -ano | findstr :11434
+netstat -ano | Select-String "LISTENING"
 2. 確認占用 PORT 的程序
-`Get-Process -Id 1056`
-3. 結束占用 PORT 的進程
-`Stop-Process -Id 1056 -Force`
-4. 再次檢查 PORT 的狀態
-`netstat -ano | findstr :11434`
+Get-Process -Id <_id>
+1. 結束占用 PORT 的進程
+Stop-Process -Id <_id> -Force
+1. 再次檢查 PORT 的狀態
+netstat -ano | findstr :11434
+
+```powershell
+tasklist /svc | findstr svchost.exe
+```
+
+```powershell
+Get-WmiObject -Class Win32_Process | Select-Object Name, ProcessId, @{Name='ExecutablePath';Expression={$_.ExecutablePath}} | Sort-Object Name
+```
 
 other
 1. 查找具體服務
-`tasklist /svc /FI "PID eq 1056"`
-2. 檢查服務詳情
+tasklist /svc /FI "PID eq 1056"
+1. 檢查服務詳情
 `Get-Service -Name "服务名称"`
-3. 重啟服務 
+1. 重啟服務 
 `Restart-Service -Name "服务名称"`
-4. 檢查服務配置 
-`Get-WmiObject win32_service | Where-Object {$_.ProcessId -eq 1056}`
-5. 停止服務
+1. 檢查服務配置 
+Get-WmiObject win32_service | Where-Object {$_.ProcessId -eq <_id>}
+1. 停止服務
 `Stop-Service -Name "服务名称"`
-6. 驗證服務狀態
+1. 驗證服務狀態
 
 警告：
 

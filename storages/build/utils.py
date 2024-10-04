@@ -40,5 +40,5 @@ def gen_summary(context,mode = 'batch'):
         completions = llm.stream_complete(get_prompt(context))
         for completion in completions:
             print(completion.delta, end="")
-    return llm.complete(get_prompt(context))
+    return llm.complete(get_prompt(context)).text
 

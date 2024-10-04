@@ -7,3 +7,7 @@ Neo4j_URI = f"bolt://{Neo4j_HOST}:{Neo4j_PORT}"
 Neo4j_USER = os.getenv("Neo4j_USER", "neo4j")
 Neo4j_PWD = os.getenv("Neo4j_PWD", "stockinfo")
 Neo4j_AUTH = (Neo4j_USER,Neo4j_PWD)
+
+VECTOR_DIM = 4096
+VECTOR_INDEX_NAME = ""
+TEXT_NODE_PROPERTY = "content"

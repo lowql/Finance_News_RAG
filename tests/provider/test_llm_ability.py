@@ -1,5 +1,3 @@
-
-
 context = """ 
     日 期：2023年06月09日
     公司名稱：廣運 (6125)
@@ -23,6 +21,7 @@ context = """
 
 import pytest
 from llama_index.llms.ollama import Ollama
+from llama_index.core import PromptTemplate
 
 models = ['llama3.1:latest','jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M ']
 
@@ -80,6 +79,39 @@ def test_IQ_speend(query_txt):
     for completion in completions:
         print(completion.delta, end="")
     print("\n=============================================================\n")
+
+@pytest.mark.parametrize("query_txt", ["最近有提到統一集團的新聞?","統一集團有關連的供應商?"])
+def test_gen_cypher(query_txt):
+    from retrievers.pg_query import graph_store
+    pg_schema = graph_store.get_schema_str()
+    template = """
+    生成一個查詢圖形資料庫的 Cypher 語句。
+    指示：
+    1. 僅使用架構中提供的關係類型和屬性。
+    2. 不要使用未提供的其他關係類型或屬性。
+    3. 不要解釋或提供任何額外回應。
+
+    架構：
+    {schema}
+
+    問題：
+    {question}
+
+    輸出：
+    僅生成對應的 Cypher 語句，並符合上述規則。
+
+    """
+    qa_template = PromptTemplate(template)
+    
+    # you can create text prompt (for completion API)
+    prompt = qa_template.format(schema=pg_schema, question=query_txt)
+    print(prompt)
+    
+    print("=============================================================")
+    completions = llm.stream_complete(prompt)
+    for completion in completions:
+        print(completion.delta, end="")
+    print("\n=============================================================\n")
     
 questions = [
     "發言人是?", 
@@ -93,8 +125,6 @@ model_question_pairs = [(query_text, model) for query_text, model in product(que
 @pytest.mark.parametrize("query_txt,model", model_question_pairs)
 def test_announcement_news(query_txt,model):
     llm = Ollama(model=model, request_timeout=60.0)
-    from llama_index.core import PromptTemplate
-
     template = (
         "你現在是專業的財金播報員，請確保你的專業性，回答請根據以下提供的資訊內容\n"
         "過程中保持客觀"

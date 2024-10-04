@@ -5,6 +5,8 @@ why use vector index: https://neo4j.com/docs/cypher-manual/current/indexes/searc
 
 """
 keywords = ["焦點股","公告","盤中速報","熱門股","營收","大漲"]
+def test_get_schema():
+    print(graph_store.get_schema_str())
 @pytest.mark.parametrize("keyword", keywords)
 def test_string_match(keyword):
     print(f"keyword is {keyword}")
@@ -16,8 +18,6 @@ def test_string_match(keyword):
     """
     rows = graph_store.structured_query(cypher,param_map={'keyword':keyword})
     [print(row) for row in rows]
-        
-
 regex_patterns = [".*子公司.*","^《.*》.*"]
 @pytest.mark.parametrize("regex_pattern", regex_patterns)
 def test_string_match_regex(regex_pattern):
@@ -30,8 +30,6 @@ def test_string_match_regex(regex_pattern):
     """
     rows = graph_store.structured_query(cypher,param_map={'regex_pattern':regex_pattern})
     [print(row )for row in rows]
-
-
 def test_string_not_match_regex(regex_pattern="(^[【《].*[》】].*)"):
     print(f"regex_pattern is {regex_pattern}")
     cypher = """
@@ -42,7 +40,6 @@ def test_string_not_match_regex(regex_pattern="(^[【《].*[》】].*)"):
     """
     rows = graph_store.structured_query(cypher,param_map={'regex_pattern':regex_pattern})
     [print(row )for row in rows]
-
 def test_check_category_be_set():
     cypher = """
     MATCH (n:`新聞`)
@@ -59,7 +56,6 @@ def test_check_category_not_be_set():
     """
     rows = graph_store.structured_query(cypher)
     [print(row )for row in rows]
-
 regex_patterns = ["^《.*》.*"]
 @pytest.mark.parametrize("regex_pattern", regex_patterns)
 def test_string_match_regex_then_order(regex_pattern):
@@ -78,9 +74,27 @@ def test_string_match_regex_then_order(regex_pattern):
     ORDER BY headline
     """
     rows = graph_store.structured_query(cypher,param_map={'regex_pattern':regex_pattern})
-    for row in rows:
-        print(row)
-        
+    [print(row )for row in rows]
+def test_temporal_type():
+    cypher = """
+        MATCH (n:新聞)
+        WHERE datetime(n.time) > datetime("2023-10-01T00:00:00")
+        AND datetime(n.time) < datetime("2023-10-31T23:59:59")
+        RETURN n.headline as headline, n.time as time
+    """
+    rows = graph_store.structured_query(cypher)
+    [print(row )for row in rows]
+def test_not_relation():
+    """ 
+    列出所有 還未 gen_by_llm 的新聞 Nodes
+    """
+    cypher = """
+    MATCH (n:`新聞`)
+    WHERE NOT (n)-[:gen_by_llm]->()
+    RETURN n
+    """
+    rows = graph_store.structured_query(cypher)
+    [print(row) for row in rows]
 def test_regex_category_filter():
     """ 
     我需要 "^《.*》.*" 匹配到的內容只顯示一次\n
@@ -99,7 +113,6 @@ def test_regex_category_filter():
     # Variable `n` not defined
     rows = graph_store.structured_query(cypher)
     [print(row) for row in rows]
-        
 def test_create_vector_index():
     """ 
     我們將結合使用文字嵌入相似度和單字距離來尋找潛在的重複項。我們先定義圖中實體的向量索引。
@@ -112,7 +125,6 @@ def test_create_vector_index():
             `vector.dimensions`:4096,
             `vector.similarity_function`: 'cosine'
         }}""")
-    
 def test_finds_duplicates():
     """ 
      在不涉及太多細節的情況下，我們結合使用文字嵌入和單字距離來尋找圖中潛在的重複項。

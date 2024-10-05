@@ -1,6 +1,5 @@
 from llama_index.core import PropertyGraphIndex
 from typing import Literal
-import pandas as pd
 from llama_index.core import Settings
 from setup import get_embed_model,get_llm,get_graph_store
 Settings.llm = get_llm()
@@ -81,16 +80,11 @@ class ManualBuildPropertyGraph:
             "新聞": ["提及"],
         }
     def news_mention_company(self,code):
-        from pipeline.news import Pipeline
-        pipe = Pipeline(code)
-        nodes = pipe.news_nodes()
-        from utils.path_manager import get_company_relations
-        relation_path = get_company_relations()
-        relation_codes = pd.read_csv(relation_path,usecols=['code','name'])
-        code_to_name = dict(zip(relation_codes['code'], relation_codes['name']))
-        name = code_to_name.get(int(code), "本公司還未上市，抑或是資料庫查無此資料")
-        print(code,'::',name)
-        print(f"build {code} news property graph")
+        from pipeline.news import News
+        news_pipe = News(code)
+        nodes = news_pipe.fetch_textnodes()
+        name = news_pipe.get_company_name()
+        print(f"build {name}({code}) news property graph")
         print(f"len of nodes :: {len(nodes)}")
         cypher = """
          MERGE (c:公司 {name: $name, code:$code})
@@ -113,35 +107,25 @@ class ManualBuildPropertyGraph:
         """ 添加公司互動
             code,name,suppliers,customers,competitor,strategic_alliance,invested 
         """
+        from pipeline.company import CompanyInteractive 
+        interactive = CompanyInteractive(code)
         print(f"build {code} relation property graph")
         pre_cypher = """
             MERGE (c1:公司 {name: $c1_name, code:$c1_code})
             MERGE (c2:公司 {name: $c2_name})
         """
-        dataset_path = './dataset/base/company_relations.csv'
-        df = pd.read_csv(dataset_path,index_col='code')
-        
-        relation_info = df.loc[int(code)]
-        params = {}
-        params['c1_name'] = relation_info['name'][:-6]
-        params['c1_code'] = int(relation_info['name'][-5:-1])
-        
-        import ast
-        zh_map = {
-            'suppliers':"供應商",
-            'competitor':"競爭者",
-            'customers':"客戶",
-            'reinvestment':"轉投資",
-            'invested':"被投資",
-            'strategic_alliance':"策略聯盟",
-        }
-        
-        for rel in df.columns[1:]:
-            items = ast.literal_eval(relation_info[rel])
+        relations = interactive.relations
+        zh_map = interactive.zh_map
+        for rel in relations:
+            rel_companys = interactive.get_rel_companys(rel)
             print('loading rel: ',zh_map[rel])
             cypher = pre_cypher + f"MERGE (c1)-[r:{zh_map[rel]}]->(c2)"
-            for item in items:
-                params['c2_name'] = item
+            for rel_company in rel_companys:
+                params = {
+                    'c1_name': interactive.get_source_company_name(),
+                    'c1_code': interactive.get_source_company_code(),
+                    'c2_name': rel_company
+                }
                 print(params)
                 self.graph_store.structured_query(cypher,param_map=params)
         self.graph_store.close()
@@ -154,14 +138,3 @@ class ManualBuildPropertyGraph:
         self.graph_store.structured_query(cypher)
         return self.graph_store.close()
         
-    def extract_Notice():
-        print(df[df['title'].str.contains(pat = '【.*】', regex = True)].loc[:,['date','title']],'\n')
-    # print(df[df['title'].str.contains(pat = '盤中速報', regex = True)].loc[:,['date','title']],'\n')
-    # print(df[df['title'].str.contains(pat = '焦點股', regex = True)].loc[:,['date','title']],'\n')
-    # print(df[df['title'].str.contains(pat = '熱門股', regex = True)].loc[:,['date','title']],'\n')
-    # print(df[df['title'].str.contains(pat = '營收', regex = True)].loc[:,['date','title']],'\n')
-    # print(df[df['title'].str.contains(pat = '《.*》', regex = True)].loc[:,['date','title']],'\n')
-        
-# 1. "\n請保持上下文關係不變的狀態下，以JSON表示\n"
-# 2. 請條列出公司的利多消息
-# 3. 簡要說明各公司持有的技術，並標註持有技術的公司([公司名稱]::(持有技術))

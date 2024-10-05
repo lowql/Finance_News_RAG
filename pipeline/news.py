@@ -1,15 +1,23 @@
+import pandas as pd
 from dataset.utils import fetch_news
 
-class Pipeline:
+class News:
     def __init__(self,code):
         self.code = code
+        self.name = self.get_company_name()
         self.df = fetch_news(code)
         self.documents = self.df['content'].tolist()
         self.meta_headline =  self.df['headline'].tolist()
         self.meta_author =  self.df['author'].tolist()
         self.meta_time =  self.df['time'].tolist()
-        
-    def news_nodes(self):
+    def get_company_name(self):
+        from utils.path_manager import get_company_relations
+        relation_path = get_company_relations()
+        relation_codes = pd.read_csv(relation_path,usecols=['code','name'])
+        code_to_name = dict(zip(relation_codes['code'], relation_codes['name']))
+        name = code_to_name.get(int(self.code), "本公司還未上市，抑或是資料庫查無此資料")
+        return name
+    def fetch_textnodes(self):
         from llama_index.core.schema import TextNode
         nodes = []
         for idx, document in enumerate(self.documents):
@@ -21,10 +29,8 @@ class Pipeline:
                 'time':self.meta_time[idx]
                 })
             nodes.append(node)
-        # print(nodes[0].metadata)
-        # print(nodes[0].get_content())
         return nodes
-    def news_documents(self):
+    def fetch_documnets(self):
         from llama_index.core.schema import Document
         documents = []
         for idx, content in enumerate(self.documents):

@@ -9,9 +9,11 @@ codes = read_record()
 # auto_builder = AutoBuildPropertyGraph()
 # def test_auto_builder():
 #     auto_builder.build_index_from_documents()
-
+def test_build_news_with_vector():
+    from storages.build.vector import build_News
+    [build_News(code) for code in codes]
 builder = ManualBuildPropertyGraph()
-def test_build_news():
+def test_build_news_mention_company():
     [builder.news_mention_company(code) for code in codes]
     
 def test_build_company_rel():

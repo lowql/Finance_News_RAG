@@ -1,3 +1,4 @@
+from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
 def get_embed_model():
     from llama_index.embeddings.ollama import OllamaEmbedding
     ollama_embedding = OllamaEmbedding(
@@ -21,63 +22,26 @@ def get_graph_store():
         url=Neo4j_URI,
     )
 
-def get_vector_store(mode,retrieval_query=""):
+def get_vector_store(**kwargs):
     """ 
-    :params mode: base, normal, hybrid, custom
-    :params retrieval_query: only 【custom】 mode need
+    :params retrieval_query(str): 
+    :params node_label(str):  setup for Node label name i.e. MERGE(n:\<_node_label_\>)
+    :params index_name(str): setup for vector index
+    :params text_node_property(str): setup for fulltext index
     """
-    from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
-    from config.db_config import VECTOR_DIM,VECTOR_INDEX_NAME,TEXT_NODE_PROPERTY
-    vector_store_config = {
-        "username": Neo4j_USER,
-        "password": Neo4j_PWD,
-        "url": Neo4j_URI,
-        "embed_dim": VECTOR_DIM,
-        "index_name": VECTOR_INDEX_NAME,
-        "text_node_property": TEXT_NODE_PROPERTY
-    }
-    if mode == 'base':
-        print("Create base neo4j vector store")
-        return Neo4jVectorStore(
-            username=vector_store_config['username'],
-            password=vector_store_config['password'],
-            url=vector_store_config['url'],
-            embedding_dimension=vector_store_config['embed_dim'],
-            index_name="vector", # vector text index name in Neo4j.
-            keyword_index_name="keyword", # fulltext index name in Neo4j.
-            node_label="CypherMapper",
-            embedding_node_property="embedding",
-            text_node_property="content",
-            distance_strategy="cosine"
-        )
-    if mode == 'normal':
-        return Neo4jVectorStore(
-            username=vector_store_config['username'],
-            password=vector_store_config['password'],
-            url=vector_store_config['url'],
-            embedding_dimension=vector_store_config['embed_dim'],
-            
-            index_name=vector_store_config['index_name'],
-            text_node_property=vector_store_config['text_node_property']
-        )
-    if mode == 'hybrid':
-        return  Neo4jVectorStore(
-            username=vector_store_config['username'],
-            password=vector_store_config['password'],
-            url=vector_store_config['url'],
-            embedding_dimension=vector_store_config['embed_dim'],
-            
-            hybrid_search=True
-        )
-        
-    if mode == 'custom':
-        return Neo4jVectorStore(
-            username=vector_store_config['username'],
-            password=vector_store_config['password'],
-            url=vector_store_config['url'],
-            embedding_dimension=vector_store_config['embed_dim'],
-            
-            retrieval_query=retrieval_query
+    print(kwargs)
+    # print(kwargs.get("index_name", "vector"))
+    return Neo4jVectorStore(
+            username=Neo4j_USER,
+            password=Neo4j_PWD,
+            url=Neo4j_URI,
+            embedding_dimension=4096,
+            node_label= kwargs.get("node_label","LlamaChunk"),
+            index_name=kwargs.get("index_name", "news_vector"), # 無論怎樣設定都是 vector ，源碼看似沒問題，也可能是我功力不夠
+            keyword_index_name=kwargs.get("keyword_index_name", "keyword"),
+            text_node_property= kwargs.get("text_node_property", "content"),
+            hybrid_search=kwargs.get("hybrid_search", False),
+            retrieval_query=kwargs.get("retrieval_query","")
         )
     
 def get_synthesize():
@@ -99,4 +63,4 @@ def get_synthesize():
     return response
 
 if __name__ == '__main__':
-    print(get_graph_store())
+    get_vector_store(index_name="new_vector")

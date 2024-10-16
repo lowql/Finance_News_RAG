@@ -25,7 +25,7 @@ def get_company_relations():
 def get_templates_dir():
    return f"./templates"
 
-def get_llama_index_template(type):
-   return f"{get_templates_dir()}/llama-index/{type}_template.jinja"
+def get_llama_index_template(filename):
+   return f"{get_templates_dir()}/llama-index/{filename}"
 
 

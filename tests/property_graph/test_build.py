@@ -1,24 +1,46 @@
-from storages.build.property_graph import AutoBuildPropertyGraph,ManualBuildPropertyGraph,graph_store
-import os
-news = os.listdir('./dataset/news/')
-codes = [new.split('_')[0] for new in news]
+from storages.build.property_graph import AutoBuildPropertyGraph,ManualBuildPropertyGraph
+from storages.build.vector import build_News
+from pipeline import utils
+from setup import get_graph_store
+graph_store = get_graph_store()
+codes = utils.get_codes()
 
 from dataset.download.helper import read_record
 codes = read_record()
 
-# auto_builder = AutoBuildPropertyGraph()
-# def test_auto_builder():
-#     auto_builder.build_index_from_documents()
-def test_build_news_with_vector():
-    from storages.build.vector import build_News
-    [build_News(code) for code in codes]
-builder = ManualBuildPropertyGraph()
+""" 手工建立 KG """
+manual_pg_builder = ManualBuildPropertyGraph()
 def test_build_news_mention_company():
-    [builder.news_mention_company(code) for code in codes]
+    [manual_pg_builder.news_mention_company(code) for code in codes]
+    cypher = """match (n:`新聞`)
+    set n :__Node__
+    return n"""
+    graph_store.structured_query(cypher)
     
 def test_build_company_rel():
-    [builder.company_rel_company(code) for code in codes]
+    [manual_pg_builder.company_rel_company(code) for code in codes]
 
+""" 自動使用 LLM 建立 KG """
+# auto_pg_builder = AutoBuildPropertyGraph()
+# def test_auto_builder():
+#     [auto_pg_builder.build_News_KG_use_dynamicPathExtractor(code) for code in codes]
+
+""" 手工建立 vector node  """
+def test_build_news_with_vector():
+    [build_News(code) for code in codes]
+    
+""" 手工建立 fulltext index """
+def test_create_fulltext_index():
+    cypher = """
+    create fulltext index keyword for (n:`__Node__`) on each [n.text]
+    options {
+        indexConfig: {
+            `fulltext.analyzer` : 'cjk'
+        }
+    }
+    """
+    graph_store.structured_query(cypher)
+""" 手工使用 cypher 設定分類新聞類別 """
 def test_set_news_category():
     """
     {'category': '《熱門族群》', 'headline': '《熱門族群》AI需求高 建準、奇鋐重返月線'}\n
@@ -35,6 +57,7 @@ def test_set_news_category():
     rows = graph_store.structured_query(cypher)
     [print(row) for row in rows]
 
+""" 手工使用 cypher 設定公告消息類別 """
 def test_set_news_notice_category():
     """ 
     {'headline': '【公告】統一應元富證券之邀參加線上法說會。'}
@@ -49,6 +72,7 @@ def test_set_news_notice_category():
     rows = graph_store.structured_query(cypher)
     [print(row) for row in rows]
 
+""" 手工使用 cypher 根據關鍵字分類新聞"""
 import pytest
 keywords = ["焦點股","盤中速報","熱門股","盤後速報","潛力股"]
 @pytest.mark.parametrize("keyword", keywords)
@@ -63,6 +87,7 @@ def test_set_news_keyword_category(keyword):
     rows = graph_store.structured_query(cypher,param_map={'keyword':keyword})
     [print(row) for row in rows]
 
+""" 自動使用 LLM 產生新聞摘要 """
 def test_set_summary_by_llm():
     from storages.build.utils import gen_summary
     cypher = """
@@ -93,4 +118,4 @@ def test_set_summary_by_llm():
         graph_store.structured_query(cypher,param_map={'headline':row['headline'],'summary_gen_by_llm':summary})
 
 def test_remove_all():
-    builder.remove_all()
+    manual_pg_builder.remove_all()

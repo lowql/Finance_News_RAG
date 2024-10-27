@@ -8,6 +8,8 @@ pip install llama-index-graph-stores-neo4j
 pip install llama-index-vector-stores-neo4jvector 
 pip install llama-index-llms-ollama
 pip install matplotlib
+pip install torch sentence-transformers
+pip install waitress
 
 ## Build 建構新聞知識圖譜
 

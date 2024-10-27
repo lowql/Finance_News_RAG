@@ -18,7 +18,7 @@ def build_News(code):
     vector_store = get_vector_store(node_label="新聞")
     from pipeline.news import News
     pipe = News(code)
-    documents = pipe.fetch_documnets()[:2]
+    documents = pipe.fetch_documnets()
     # BUG: Noe4j 的 vector store 機制限制比較多，無法直接處理 ingestion pipline 產生的 nested maps structure 
    
     pipe.put_news_to_vector_store(documents=documents,vector_store=vector_store)
@@ -29,16 +29,4 @@ def build_News(code):
     """
     
 if __name__ == '__main__':
-    
-    from retrievers.vector_query import VectorIndex
-    vector_index = VectorIndex(node_label='News',keyword_index_name='keyword',text_node_property="content")
-    vector_store = vector_index.get_vector_store()
-    nodes =  vector_index.retrieve("統一集團")
-    
-    for node in nodes:
-        print(node)
-        print('='*50,"get content",'='*50)
-
-# query_engine = index.as_query_engine()
-# response = query_engine.query("廣運有哪些競爭對手")
-# print(response)
+    pass

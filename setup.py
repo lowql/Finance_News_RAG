@@ -1,18 +1,18 @@
 from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
-from llama_index.core.extractors import TitleExtractor,KeywordExtractor,SummaryExtractor
-from llama_index.core.indices.property_graph import DynamicLLMPathExtractor,ImplicitPathExtractor
+from llama_index.core.indices.property_graph import DynamicLLMPathExtractor
 from llama_index.core.indices import PropertyGraphIndex
 import re
 from typing import Literal
 from utils.path_manager import get_llama_index_template
-from jinja2 import Template
-from llama_index.core.schema import Document,TransformComponent
+from llama_index.core.schema import Document,TransformComponent,MetadataMode
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.settings import Settings
 def get_embed_model():
     from llama_index.embeddings.ollama import OllamaEmbedding
+    model_name = "viosay/conan-embedding-v1:latest"
+    print(f"當前的 embedding model 使用 {model_name}")
     ollama_embedding = OllamaEmbedding(
-        model_name="viosay/conan-embedding-v1:latest",
+        model_name=model_name,
         base_url="http://localhost:11434",
         ollama_additional_kwargs={"mirostat": 0}
     )
@@ -20,9 +20,17 @@ def get_embed_model():
 
 def get_llm():
     from llama_index.llms.ollama import Ollama
-    llm = Ollama(model='jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M',request_timeout=600)
+    model_name = 'jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M'
+    print(f"當前的 llm model 使用 {model_name}")
+    llm = Ollama(model=model_name,request_timeout=600)
     return llm
 
+def get_reranker(rerank_top_n):
+    from llama_index.core.postprocessor import SentenceTransformerRerank
+    rerank_model = "BAAI/bge-reranker-large"
+    print(f"當前的 rerank model 使用 {rerank_model}")
+    rerank = SentenceTransformerRerank(model=rerank_model,top_n=rerank_top_n)
+    return rerank
 Settings.llm = get_llm()
 Settings.embed_model = get_embed_model()
 
@@ -33,14 +41,14 @@ class CustomNewExtractor(TransformComponent):
             headline = node.metadata['headline']
             author = node.metadata['author']
             time = node.metadata['time']
+            content = node.get_content()
+            documents = []
             if "【公告】" in node.metadata['headline']:
-                print(node.get_content())
-                documents = []
-                announcement_metainfo,sections = self.parse_announcement(node.get_content())
-                print(announcement_metainfo)
+                # print(content)
+                announcement_metainfo,sections = self.parse_announcement(content)
+                # print(announcement_metainfo)
                 for section in sections:
-                    documents.append(
-                        Document(
+                    document = Document(
                             text=section,
                             metadata={
                                 'headline':headline,
@@ -51,11 +59,29 @@ class CustomNewExtractor(TransformComponent):
                             },
                             metadata_seperator="\n",
                             metadata_template="{key} : {value} ",
-                            text_template="公告基本資訊:\n {metadata_str}\n\n 公告消息:\n {content}"
-                        ))
+                            text_template="公告基本資訊:\n{metadata_str}\n\n公告消息:\n{content}"
+                        )
+                    content = document.get_content(metadata_mode=MetadataMode.LLM)
+                    document.set_content(content)
+                    documents.append(document)
                 return documents
             else:
-                return nodes
+                print("parse normal news")
+                paragraphs = self.parse_normal_news(content)
+                for paragraph in paragraphs:
+                    document =  Document(
+                            text=paragraph,
+                            metadata={
+                                'headline':headline,
+                                'author':author,
+                                'time':time,
+                            },
+                            metadata_seperator="\n",
+                            metadata_template="{key} : {value} ",
+                            text_template="===\n新聞基本資訊:\n{metadata_str}\n\n新聞內文:\n{content}\n===\n"
+                        )
+                    documents.append(document)
+                return documents
     def parse_announcement(self,text):
         """ 
         {
@@ -94,6 +120,12 @@ class CustomNewExtractor(TransformComponent):
 
         return announcement_metainfo,sections
 
+    def parse_normal_news(self,text):
+        base_split_pattern = re.compile(r"([^。\n;]+[。\n;])")
+        matches = base_split_pattern.findall(text)
+        paragraphs = [match.strip() for match in matches if match.strip()]
+        return paragraphs
+        
 class Transformations:
     def __init__(self):
         self.max_knowledge_triplets = 3
@@ -136,7 +168,7 @@ class Transformations:
             ] = None,\n
         """
         return DynamicLLMPathExtractor(
-                        llm=get_llm(),
+                        # llm=get_llm(),
                         max_triplets_per_chunk=3,
                         num_workers=4,
                         extract_prompt=self.set_prompt_template("DYNAMIC_EXTRACT_TMPL.jinja"),

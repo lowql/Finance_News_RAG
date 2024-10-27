@@ -22,10 +22,7 @@ def get_news_content_file(code):
 def get_company_relations():
    return f"{get_dataset_dir()}/base/company_relations.csv"
 
-def get_templates_dir():
-   return f"./templates"
-
 def get_llama_index_template(filename):
-   return f"{get_templates_dir()}/llama-index/{filename}"
+   return f"templates/llama-index/{filename}"
 
 

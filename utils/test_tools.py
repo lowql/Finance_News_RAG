@@ -1,18 +1,14 @@
 from utils.path_manager import get_news_content_file
-from llama_index.core import Document
+from llama_index.core.schema import Document,NodeWithScore
 
 def display_prompt_dict(prompts_dict):
     for k, p in prompts_dict.items():
         text_md = f"**Prompt Key**: {k}\n" f"**Text:** \n```"
         print(text_md)
         print(p.get_template(),'```\n\n')
-
-def display_nodes(nodes):
-    for node in nodes:
-        print(node)
+    
     
         
-
 def fetch_documents():
     documents = []
     with open(get_news_content_file(6125),'r',encoding='utf8') as csvfile:

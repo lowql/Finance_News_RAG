@@ -19,6 +19,17 @@ def test_build_news_mention_company():
     
 def test_build_company_rel():
     [manual_pg_builder.company_rel_company(code) for code in codes]
+    
+def test_build_company_interaction_info_node():
+    cypher = """
+match (n:`公司`)
+where n.code is not null
+match (n)-[r]->(c)
+where r:`供應商` or r:`客戶` or r:`競爭者` or r:`策略聯盟` or r:`被投資` or r:`轉投資`
+with n as company, n.name + "的" + type(r) + "是" + c.name as interaction
+merge (company)-[:`背景知識`]->(:`公司互動` {info:interaction})
+    """
+    graph_store.structured_query(cypher)
 
 """ 自動使用 LLM 建立 KG """
 # auto_pg_builder = AutoBuildPropertyGraph()
@@ -26,18 +37,18 @@ def test_build_company_rel():
 #     [auto_pg_builder.build_News_KG_use_dynamicPathExtractor(code) for code in codes]
 
 """ 手工建立 vector node  """
-def test_build_news_with_vector():
-    [build_News(code) for code in codes]
+# def test_build_news_with_vector():
+#     [build_News(code) for code in codes]
     
 """ 手工建立 fulltext index """
 def test_create_fulltext_index():
     cypher = """
-    create fulltext index keyword for (n:`__Node__`) on each [n.text]
-    options {
-        indexConfig: {
-            `fulltext.analyzer` : 'cjk'
-        }
+create fulltext index keyword IF NOT EXISTS for (n:`__Node__`|`公司互動`) on each [n.text,n.content,n.info]
+options {
+    indexConfig: {
+        `fulltext.analyzer` : 'cjk'
     }
+}
     """
     graph_store.structured_query(cypher)
 """ 手工使用 cypher 設定分類新聞類別 """
@@ -101,7 +112,7 @@ def test_set_summary_by_llm():
     for row in rows:
         print('\n','='*50,'\n',row['headline'],'\n','='*50,'\n')
         cypher = """
-        MATCH (n:`新聞` {headline: $headline})
+        MATCH (n:`新聞`:__Node__ {headline: $headline})
         OPTIONAL MATCH (n)-[:gen_by_llm]->(s:`總結`)
         WITH n, s
         WHERE s IS NULL

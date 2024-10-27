@@ -1,9 +1,11 @@
-from flask import request
-from flask import Flask,render_template
-from flask import send_from_directory     
+from flask import request,jsonify
+from flask import Flask,render_template,Response
+from flask import send_from_directory   
+from waitress import serve  
 import os 
-
-
+from pipeline.news import News
+from retrievers.pg_query import stream_query_response
+from llama_index.core.response_synthesizers import ResponseMode
 app = Flask(__name__)
 
 @app.route("/",methods = ['GET','POST'],endpoint="welcome page")
@@ -24,28 +26,44 @@ def vector_retriever():
 def graph_retriever():
     return "graph_retriever from neo4j"
 
+@app.get("/companys")
+def get_company_list():
+    from pipeline import utils
+    codes = utils.get_codes()
+    return jsonify(codes)
+
 @app.get("/news/<int:stock_id>")
 def get_news(stock_id):
-    return f"These are {stock_id} news"
-
+    news = News(stock_id)
+    contents = news.fetch_content()
+    return jsonify(contents)
+    
 
 @app.get("/query")
 def query_index():
     # http://localhost:5000/query?text="廣運的產品是?"
     query_text = request.args.get("text", None)
-    import sys
-    print(sys.path)
-    # ['D:\\_Research\\Finance_News_RAG\\apps', 'D:\\_Research\\Finance_News_RAG', ]
-
     print(f"Get Client Message: {query_text}")
     if query_text is None:
         return (
             "No text found, please include a ?text=blah parameter in the URL",
             400,
         )
-    # Now you can import your modules
-    from retrievers.pg_query import pg_query
-    response = pg_query(query_text)
-    return str(response), 200
-
-app.run()
+    # response = pg_retriever_query(query_text,ResponseMode.REFINE)
+    stream_response = stream_query_response(query_txt=query_text,response_mode=ResponseMode.REFINE)
+    def response_generator():
+        for text in stream_response.response_gen:
+            yield text
+    if stream_response.source_nodes == []:
+        return "資料庫中未有相關資訊，故無法回應此問題"
+    return Response(
+        response=response_generator(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            # 'Connection': 'keep-alive' # AssertionError: Connection is a "hop-by-hop" header; it cannot be used by a WSGI application (see PEP 3333)
+        })
+    
+app.debug = True
+if __name__ == '__main__':
+    serve(app, host='0.0.0.0', port=5000)

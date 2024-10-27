@@ -1,10 +1,9 @@
 import pandas as pd
 from dataset.utils import fetch_news
-from pipeline import utils
 from llama_index.core.schema import Document
-from setup import get_embed_model,get_llm
+from setup import Transformations
+from setup import get_embed_model
 from llama_index.core.ingestion import IngestionPipeline
-
 
 class News:
     def __init__(self,code):
@@ -15,6 +14,12 @@ class News:
         self.meta_headline =  self.df['headline'].tolist()
         self.meta_author =  self.df['author'].tolist()
         self.meta_time =  self.df['time'].tolist()
+    def fetch_content(self):
+        contents = [
+         {"stock_id":self.code,"title":headline,'content':content,"date":time,"source":author} 
+         for (headline,time,content,author) in zip(self.meta_headline,self.meta_time,self.documents,self.meta_author)
+        ]
+        return contents
     def ingestion(self,documents,transformations,vector_store=None):
         """ 
             IngestionPipeline 可以直接搭配 vector store 建立 embedding Nodes
@@ -47,33 +52,28 @@ class News:
                 })
             nodes.append(node)
         return nodes
-    def put_news_to_kg_store(self,documents,graph_store):
+    def fetch_announcement_news_chunk(self,documents):
         """ 
         原本預計使用IngestionPipeline 可以保留更多彈性但無論如何都會發生以下錯誤
         BUG FAILED tests/dataset_workflow/test_extractor.py::test_dynamicPathExtractor - httpx.ReadTimeout
         """
-        from setup import Transformations
-        from llama_index.core import PropertyGraphIndex
         transformation = Transformations()
-        normal_news = []
+        announcement_news = []
         for document in documents:
-            if "【公告】" not in document.metadata['headline']:
-                normal_news.append(document)
+            if "【公告】" in document.metadata['headline']:
+                announcement_news.append(document)
                 
-        # 搭被 vector store 做 embedding 數據量太多不切實際
-        normal_news_nodes = self.ingestion(documents=normal_news,
-                                            transformations=[
-                                                transformation.get_kg_dynamic_extractor(),
-                                                ])
-        print(normal_news_nodes)
-        index = PropertyGraphIndex(
-            llm = get_llm(),
-            nodes=normal_news_nodes,
-            property_graph_store=graph_store,
-            embed_model=get_embed_model(), #沒有 embed model 後續的 query 會有困難所以必須加上
-            show_progress=True,
-        )
-        return index
+
+        #根據實作經驗 公告的資訊經過 embedding 會混淆資料的提取，所以忽略embedder，使用fulltext index 會相比 vector index 更加實際
+        #TODO
+        announcement_news_nodes = self.ingestion(documents=announcement_news,
+                                                transformations=[
+                                                    transformation.get_custom_extractor(),
+                                                    transformation.get_sentence_splitter()
+                                                    ]
+                                                )
+        print(f"len of announcement_news_nodes is {len(announcement_news_nodes)}")
+        return announcement_news_nodes
     def put_news_to_vector_store(self,documents,vector_store):
         """ 
             BUG 狀態無法卡在最後，因為資料是嵌套形式無法直接將資料存入Neo4j 
@@ -89,19 +89,13 @@ class News:
             else: 
                 normal_news.append(document)
 
-        announcement_news_nodes = self.ingestion(documents=announcement_news,
-                                                transformations=[
-                                                    transformation.get_custom_extractor(),
-                                                    transformation.get_sentence_splitter(),
-                                                    embedder],
-                                                vector_store=vector_store)
-        print(f"len of announcement_news_nodes is {len(announcement_news_nodes)}")
+
         normal_news_nodes = self.ingestion(documents=normal_news,
                                             transformations=[
                                                 transformation.get_sentence_splitter(),
                                                 embedder],
                                             vector_store=vector_store)
-        print(f"len of normal_news_nodes is {len(normal_news_nodes)}")
+        print(f"{self.code} len of normal_news_nodes is {len(normal_news_nodes)}")
         vector_store.client.close()
     def fetch_news_company_tuple(self):
         from llama_index.core.graph_stores.types import EntityNode, Relation

@@ -1,48 +1,98 @@
-from llama_index.core import PropertyGraphIndex
-
-from llama_index.core import Settings
-from setup import get_embed_model,get_llm,get_graph_store
-from utils.test_tools import display_prompt_dict,display_nodes
+from llama_index.core import get_response_synthesizer
+from llama_index.core import Settings,DocumentSummaryIndex
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.schema import NodeWithScore,QueryBundle,TextNode,MetadataMode
+from setup import get_embed_model,get_llm,get_reranker,Transformations,get_vector_store
 from utils.get import get_prompt_template
-
+from retrievers.custom_retriever import CustomNeo4jRetriever
+from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.core.postprocessor import SimilarityPostprocessor
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core import SummaryIndex,StorageContext
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from typing import List,Optional
 Settings.llm = get_llm()
 Settings.embed_model = get_embed_model()
-graph_store = get_graph_store()
-index = PropertyGraphIndex.from_existing(
-    property_graph_store=graph_store,
-    use_async = False,
-)
-    
-def update_query_prompt(query_engine):
-    display_prompt_dict(query_engine.get_prompts())
-    query_engine.update_prompts(
-        {"response_synthesizer:text_qa_template": get_prompt_template('text_qa'),
-         "response_synthesizer:refine_template":get_prompt_template('refine')
-        },
-        
-    )
-    display_prompt_dict(query_engine.get_prompts())
-    
-def pg_retriever_query(query_txt,response_mode="no_text"):
-    from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
-    retriever = index.as_retriever(similarity_top_k=5) 
-    query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=response_mode)
-    update_query_prompt(query_engine)
-    response = query_engine.query(query_txt)
-    display_nodes(response.source_nodes)
-    print()
-    print(response)
-    
-def pg_query(query_txt,response_mode="tree_summarize"):
-    query_engine = index.as_query_engine(response_mode=response_mode)
-    display_prompt_dict(query_engine.get_prompts())
-    
-    response = query_engine.query(query_txt)
-    print(response.source_nodes)
 
+class MetadataNodePostprocessor(BaseNodePostprocessor):
+    def _postprocess_nodes(
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
+    ) -> List[NodeWithScore]:
+        new_nodes = []
+        for n in nodes:
+            # print(n.metadata)
+            if n.metadata.get("time") is not None:
+                time = n.metadata["time"]
+                time_str = f"\n事件發生日期:  {str(time)}"
+                base_node = TextNode(text=time_str+n.text)
+            else:
+                base_node = TextNode(text=n.text)
+           
+            new_nodes.append(NodeWithScore(node=base_node,score=n.score))
+        return new_nodes
+
+def stream_query_response(retriever,query_txt,response_mode="no_text"):    
+    rerank_top_n = 3
+    rerank = get_reranker(rerank_top_n)
+    synth = get_response_synthesizer(
+        streaming=True,
+        text_qa_template=get_prompt_template("text_qa_template.jinja"),
+        refine_template=get_prompt_template("refine_template.jinja"),
+        response_mode=response_mode)
+    query_engine = RetrieverQueryEngine.from_args(
+        retriever,
+        response_synthesizer=synth,
+        node_postprocessors=[
+            rerank,
+            MetadataNodePostprocessor(),
+            SimilarityPostprocessor(similarity_cutoff=0.6)
+            ]
+        )
+    streaming_response = query_engine.query(query_txt)
+    print("="*25,f"使用ReRank後的 top_{rerank_top_n} 參考資料",'='*25)
+    [print(node) for node in streaming_response.source_nodes]
+    print("="*25,"輸出",'='*25)
+    return streaming_response
+
+def query_from_neo4j(query_txt,response_mode="no_text"):
+    retriever = CustomNeo4jRetriever().get_retriever()
+    streaming_response = stream_query_response(retriever=retriever,
+                          query_txt=query_txt,
+                          response_mode=response_mode)
+    return streaming_response
+    
+     
+
+def summary_news(documents,query_txt="",response_mode="no_text"):
+    transformations = Transformations()
+    pipeline = IngestionPipeline(
+            transformations= [transformations.get_custom_extractor()],
+        )
+    documents = pipeline.run(documents=documents,num_workers=4)
+    [print(node.get_content(metadata_mode=MetadataMode.LLM)) for node in documents]
+    print(f"len of documents {len(documents)}")
+    rerank = get_reranker(3)
+    summary_index = SummaryIndex(nodes=documents)
+    query_engine = summary_index.as_query_engine(similarity_top_k=3, node_postprocessors=[rerank,SimilarityPostprocessor(similarity_cutoff=0.6)])
+    query_engine.update_prompts({
+        "response_synthesizer:text_qa_template":get_prompt_template("text_qa_template.jinja"),
+        "response_synthesizer:refine_template":get_prompt_template("refine_template.jinja"),
+        })
+    # [print(f"===\n**Prompt Key**: {k}\n" f"**Text:** \n{p.get_template()}\n====\n") for k, p in query_engine.get_prompts().items()]
+    streaming_response = query_engine.query("最近廣運的不動產變動")
+    [print(node) for node in streaming_response.source_nodes]
+    print(streaming_response)
+    # retriever = summary_index.as_retriever()
+    # streaming_response = stream_query_response(
+    #     retriever=retriever,
+    #     query_txt=query_txt,
+    #     response_mode=response_mode)
+    # return streaming_response
+    
+    
 if __name__ == '__main__':
-    from llama_index.core.response_synthesizers import ResponseMode
-    pg_retriever_query("ResponseMode.NO_TEXT",ResponseMode.NO_TEXT)
-    # pg_query("NO_TEXT",ResponseMode.NO_TEXT)
-    # pg_query("CONTEXT_ONLY",ResponseMode.CONTEXT_ONLY)
+    from pipeline.news import News
+    news = News(6125)
+    documents = news.fetch_documnets()
+    summary_news(documents=documents[:2],response_mode="refine")
     

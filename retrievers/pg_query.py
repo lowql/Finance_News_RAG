@@ -1,15 +1,14 @@
 from llama_index.core import get_response_synthesizer
-from llama_index.core import Settings,DocumentSummaryIndex
+from llama_index.core import Settings
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.schema import NodeWithScore,QueryBundle,TextNode,MetadataMode
-from setup import get_embed_model,get_llm,get_reranker,Transformations,get_vector_store
+from setup import get_embed_model,get_llm,get_reranker,Transformations
 from utils.get import get_prompt_template
 from retrievers.custom_retriever import CustomNeo4jRetriever
 from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core import SummaryIndex,StorageContext
-from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core import SummaryIndex
 from typing import List,Optional
 Settings.llm = get_llm()
 Settings.embed_model = get_embed_model()
@@ -31,11 +30,12 @@ class MetadataNodePostprocessor(BaseNodePostprocessor):
             new_nodes.append(NodeWithScore(node=base_node,score=n.score))
         return new_nodes
 
-def stream_query_response(retriever,query_txt,response_mode="no_text"):    
+
+def query_response(retriever,query_txt,response_mode="no_text",streaming=True):    
     rerank_top_n = 3
     rerank = get_reranker(rerank_top_n)
     synth = get_response_synthesizer(
-        streaming=True,
+        streaming=streaming,
         text_qa_template=get_prompt_template("text_qa_template.jinja"),
         refine_template=get_prompt_template("refine_template.jinja"),
         response_mode=response_mode)
@@ -56,14 +56,14 @@ def stream_query_response(retriever,query_txt,response_mode="no_text"):
 
 def query_from_neo4j(query_txt,response_mode="no_text"):
     retriever = CustomNeo4jRetriever().get_retriever()
-    streaming_response = stream_query_response(retriever=retriever,
+    streaming_response = query_response(retriever=retriever,
                           query_txt=query_txt,
-                          response_mode=response_mode)
+                          response_mode=response_mode,
+                          streaming=True
+                          )
     return streaming_response
     
-     
-
-def summary_news(documents,query_txt="",response_mode="no_text"):
+def summary_news(documents,query_txt="",streaming=False):
     transformations = Transformations()
     pipeline = IngestionPipeline(
             transformations= [transformations.get_custom_extractor()],
@@ -73,21 +73,15 @@ def summary_news(documents,query_txt="",response_mode="no_text"):
     print(f"len of documents {len(documents)}")
     rerank = get_reranker(3)
     summary_index = SummaryIndex(nodes=documents)
-    query_engine = summary_index.as_query_engine(similarity_top_k=3, node_postprocessors=[rerank,SimilarityPostprocessor(similarity_cutoff=0.6)])
+    query_engine = summary_index.as_query_engine(streaming=streaming, node_postprocessors=[rerank,SimilarityPostprocessor(similarity_cutoff=0.01)])
     query_engine.update_prompts({
         "response_synthesizer:text_qa_template":get_prompt_template("text_qa_template.jinja"),
         "response_synthesizer:refine_template":get_prompt_template("refine_template.jinja"),
         })
     # [print(f"===\n**Prompt Key**: {k}\n" f"**Text:** \n{p.get_template()}\n====\n") for k, p in query_engine.get_prompts().items()]
-    streaming_response = query_engine.query("最近廣運的不動產變動")
+    streaming_response = query_engine.query(query_txt)
     [print(node) for node in streaming_response.source_nodes]
-    print(streaming_response)
-    # retriever = summary_index.as_retriever()
-    # streaming_response = stream_query_response(
-    #     retriever=retriever,
-    #     query_txt=query_txt,
-    #     response_mode=response_mode)
-    # return streaming_response
+    return streaming_response
     
     
 if __name__ == '__main__':

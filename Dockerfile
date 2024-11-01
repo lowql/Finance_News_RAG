@@ -1,9 +1,5 @@
 # 1. 構建Docker鏡像:  
 # docker build -t neo4j_for_stock .
-# 2. 運行 
-# chmod +x start-neo4j.sh 使腳本可執行。
-# 3. 執行 
-# ./start-neo4j.sh
 
 # Dockerfile
 FROM neo4j:community-bullseye
@@ -17,8 +13,8 @@ ENV NEO4J_PLUGINS=["apoc"]
 # Cleanup the config or disable 'server.config.strict_validation.enabled' to continue.
 # COPY neo4j.conf /conf/neo4j.conf
 
-COPY /conf/apoc.conf /conf/apoc.conf
-COPY /conf/neo4j.conf /conf/neo4j.conf
+COPY /config/apoc.conf /conf/apoc.conf
+COPY /config/neo4j.conf /conf/neo4j.conf
 
 # 暴露端口
 EXPOSE 7474 7687

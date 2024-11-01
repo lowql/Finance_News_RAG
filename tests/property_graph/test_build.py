@@ -3,42 +3,44 @@ from storages.build.vector import build_News
 from pipeline import utils
 from setup import get_graph_store
 graph_store = get_graph_store()
-codes = utils.get_codes()
+# codes = utils.get_codes()
 
 from dataset.download.helper import read_record
 codes = read_record()
 
-""" 手工建立 KG """
-manual_pg_builder = ManualBuildPropertyGraph()
-def test_build_news_mention_company():
-    [manual_pg_builder.news_mention_company(code) for code in codes]
-    cypher = """match (n:`新聞`)
-    set n :__Node__
-    return n"""
-    graph_store.structured_query(cypher)
+# """ 手工建立 KG """
+# manual_pg_builder = ManualBuildPropertyGraph()
+# def test_build_news_mention_company():
+#     [manual_pg_builder.news_mention_company(code) for code in codes]
+#     cypher = """match (n:`新聞`)
+#     set n :__Node__
+#     return n"""
+#     graph_store.structured_query(cypher)
     
-def test_build_company_rel():
-    [manual_pg_builder.company_rel_company(code) for code in codes]
+# def test_build_company_rel():
+#     [manual_pg_builder.company_rel_company(code) for code in codes]
     
-def test_build_company_interaction_info_node():
-    cypher = """
-match (n:`公司`)
-where n.code is not null
-match (n)-[r]->(c)
-where r:`供應商` or r:`客戶` or r:`競爭者` or r:`策略聯盟` or r:`被投資` or r:`轉投資`
-with n as company, n.name + "的" + type(r) + "是" + c.name as interaction
-merge (company)-[:`背景知識`]->(:`公司互動` {info:interaction})
-    """
-    graph_store.structured_query(cypher)
+# def test_build_company_interaction_info_node():
+#     cypher = """
+# match (n:`公司`)
+# where n.code is not null
+# match (n)-[r]->(c)
+# where r:`供應商` or r:`客戶` or r:`競爭者` or r:`策略聯盟` or r:`被投資` or r:`轉投資`
+# with n as company, n.name + "的" + type(r) + "是" + c.name as interaction
+# merge (company)-[:`背景知識`]->(:`公司互動` {info:interaction})
+#     """
+#     graph_store.structured_query(cypher)
 
 """ 自動使用 LLM 建立 KG """
-# auto_pg_builder = AutoBuildPropertyGraph()
-# def test_auto_builder():
-#     [auto_pg_builder.build_News_KG_use_dynamicPathExtractor(code) for code in codes]
+auto_pg_builder = AutoBuildPropertyGraph()
+def test_auto_builder():
+    for code in codes[2:]:
+        print(f"stock id {code}run auto kg builder")
+        auto_pg_builder.build_News_KG_use_dynamicPathExtractor(code)
 
 """ 手工建立 vector node  """
-# def test_build_news_with_vector():
-#     [build_News(code) for code in codes]
+def test_build_news_with_vector():
+    [build_News(code) for code in codes]
     
 """ 手工建立 fulltext index """
 def test_create_fulltext_index():

@@ -23,7 +23,7 @@ import pytest
 from llama_index.llms.ollama import Ollama
 from llama_index.core import PromptTemplate
 
-models = ['llama3.1:latest','jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M ']
+models = ['jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M ']
 
 #轉換成以下形式
 # 使用列表推导式和product函数创建所有可能的模型-问题对
@@ -67,14 +67,11 @@ questions = [
     
     
 ]
-model = models[1]
-llm = Ollama(model=model, request_timeout=60.0)
+from setup import get_llm
+llm = get_llm()
 @pytest.mark.parametrize("query_txt", questions)
 def test_IQ_speend(query_txt):
     print(query_txt)
-    print("=============================================================")
-    print("use model is",model)
-    print("=============================================================")
     completions = llm.stream_complete(query_txt)
     for completion in completions:
         print(completion.delta, end="")

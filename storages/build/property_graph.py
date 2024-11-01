@@ -22,7 +22,7 @@ class AutoBuildPropertyGraph:
                     property_graph_store=self.graph_store,
                     kg_extractors=[dynamic_extractor],
                     embed_kg_nodes=False,
-                    # show_progress=True,
+                    show_progress=True,
                 )
                 print(f"{idx}/{doc_len} :: success extract news")
             except Exception as e:

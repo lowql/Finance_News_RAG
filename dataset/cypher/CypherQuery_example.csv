@@ -1,0 +1,40 @@
+prompt,cypher_query,usage
+列出所有未被歸類的新聞,"MATCH (n:`新聞`)-[p]->()
+WHERE n.category is null
+RETURN DISTINCT n.headline as headline,n.author as author, n.content as content",分析
+列出所有已被歸類的新聞,"MATCH (n:`新聞`)-[p]->()
+WHERE not  n.category is null
+RETURN DISTINCT n.headline as headline, n.author as author , n.content as content",分析
+列出所有未被歸類的新聞,"MATCH (n:`新聞`)-[p]->()
+WHERE n.category is null
+RETURN DISTINCT n.headline as headline",分析
+新聞節點總數有多少,MATCH (n:`新聞`) RETURN count(n),分析
+資料庫中有幾筆新聞,MATCH (n:`新聞`) RETURN count(n),分析
+列出所有新聞記者,"MATCH (n) WHERE (n.author) IS NOT NULL 
+RETURN DISTINCT ""node"" as entity, n.author AS author",分析
+列出所有公司,"MATCH (n:`公司`) WHERE (n.name) IS NOT NULL 
+RETURN DISTINCT ""node"" as entity, n.name AS name",分析
+列出 公司 Lable 所有潛在的關係,"MATCH (:`公司`)-[p]->()
+RETURN DISTINCT type(p) ",分析
+回傳新聞 time 屬性的的變數型別,"MATCH (n:`新聞`)-[p]->()
+RETURN DISTINCT apoc.meta.cypher.type(n.time) LIMIT 10",分析
+回傳新聞的所有屬性變數型別與屬性結構差異,"MATCH (n:`新聞`)-[p]->()
+RETURN DISTINCT apoc.meta.cypher.types(n)",分析
+廣運跟其他公司的關聯,"MATCH (p:公司 {name: ""廣運""})-[]->(n:公司)
+RETURN p,n",查詢
+廣運的客戶有哪些,"MATCH (p:公司 {name: ""廣運""})-[r:`客戶`]->(n:公司)
+RETURN p.name, type(r) ,n.name",查詢
+廣運的競爭者有哪些,"MATCH (p:公司 {name: ""廣運""})-[r:`競爭者`]->(n:公司)
+RETURN p.name, type(r) ,n.name",查詢
+廣運的轉投資有哪些,"MATCH (p:公司 {name: ""廣運""})-[r:`轉投資`]->(n:公司)
+RETURN p.name, type(r) ,n.name",查詢
+廣運的策略聯盟有哪些,"MATCH (p:公司 {name: ""廣運""})-[r:`策略聯盟`]->(n:公司)
+RETURN p.name, type(r) ,n.name",查詢
+廣運被那些公司投資,"MATCH (p:公司 {name: ""廣運""})-[r:`被投資`]->(n:公司)
+RETURN p.name, type(r) ,n.name",查詢
+廣運被那些企業投資,"MATCH (p:公司 {name: ""廣運""})-[r:`被投資`]->(n:公司)
+RETURN p.name, type(r) ,n.name",查詢
+廣運有哪些競爭對手,"MATCH (p:公司 {name: ""廣運""})-[r:`競爭者`]->(n:公司)
+RETURN p.name, type(r) ,n.name",查詢
+查詢公司 6125及其直接競爭者,"MATCH (p:公司 {code: 6125})-[r:`競爭者`]->(n:公司)
+RETURN p.name, type(r) ,n.name",查詢

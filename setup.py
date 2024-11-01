@@ -7,22 +7,31 @@ from utils.path_manager import get_llama_index_template
 from llama_index.core.schema import Document,TransformComponent,MetadataMode
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.settings import Settings
+
+# base_url = "http://localhost:11434"
+base_url = "http://140.125.45.129:11434"
 def get_embed_model():
     from llama_index.embeddings.ollama import OllamaEmbedding
     model_name = "viosay/conan-embedding-v1:latest"
     print(f"當前的 embedding model 使用 {model_name}")
     ollama_embedding = OllamaEmbedding(
         model_name=model_name,
-        base_url="http://localhost:11434",
+        base_url=base_url,
         ollama_additional_kwargs={"mirostat": 0}
     )
     return ollama_embedding
 
+ 
+#linux: curl http://140.125.45.129:11434:11434/api/generate -d '{"model": "jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M","prompt":"Why is the sky blue?"}'
+#windows: 
+# curl -Uri "http://140.125.45.129:11434/api/generate" -Method Post -Body '{"model":"jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M","prompt":"Why is the sky blue?"}' -ContentType "application/json"
 def get_llm():
     from llama_index.llms.ollama import Ollama
     model_name = 'jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M'
     print(f"當前的 llm model 使用 {model_name}")
-    llm = Ollama(model=model_name,request_timeout=600)
+    llm = Ollama(model=model_name,
+                 base_url=base_url,
+                 request_timeout=600)
     return llm
 
 def get_reranker(rerank_top_n):
@@ -168,8 +177,8 @@ class Transformations:
             ] = None,\n
         """
         return DynamicLLMPathExtractor(
-                        # llm=get_llm(),
-                        max_triplets_per_chunk=3,
+                        llm=get_llm(),
+                        max_triplets_per_chunk=10,
                         num_workers=4,
                         extract_prompt=self.set_prompt_template("DYNAMIC_EXTRACT_TMPL.jinja"),
                         allowed_entity_types= self.allowed_entity_types,

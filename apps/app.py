@@ -86,7 +86,7 @@ def summary_frontend_data():
         )
     stream_response = summary_news(documents=documents[:3],query_txt=query_text)
     if stream_response.source_nodes == [] :
-        return json.dumps({'responese':"根據使用者提供的資料，無法回應使用者問題"})
+        return json.dumps({'responese':"根據使用者提供的資料，無法回應使用者問題"},ensure_ascii=False)
     serialized_nodes = [serialize_node(node) for node in stream_response.source_nodes]
     json_responese = json.dumps({'source_nodes':serialized_nodes,'responese':stream_response.response},ensure_ascii=False)
     

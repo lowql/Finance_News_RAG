@@ -177,7 +177,7 @@ class CustomNeo4jRetriever:
         self.fulltext_retriever = CustomFullTextRetriever()
     
     def get_retriever(self):
-        return self.index.as_retriever(sub_retrievers=[self.fulltext_retriever,self.vector_retriever,self])
+        return self.index.as_retriever(sub_retrievers=[self.fulltext_retriever,self.vector_retriever])
     
 
 if __name__ == "__main__":

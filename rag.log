@@ -1,6 +1,6 @@
-11/03/2024 06:02:10 PM - setup - INFO : 初始化 logger
-11/03/2024 06:02:10 PM - setup - INFO : 初始化 RAG flow 所需物件
-11/03/2024 06:02:10 PM - setup - INFO : Current embedding model use viosay/conan-embedding-v1:latest
-11/03/2024 06:02:10 PM - setup - INFO : Current llm model use jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M
-11/03/2024 06:02:25 PM - setup - INFO : neo4j connecting...
-11/03/2024 06:02:25 PM - setup - INFO : build graph store: bolt://localhost:7687
+11/03/2024 06:09:17 PM - setup - INFO : 初始化 logger
+11/03/2024 06:09:17 PM - setup - INFO : 初始化 RAG flow 所需物件
+11/03/2024 06:09:17 PM - setup - INFO : Current embedding model use viosay/conan-embedding-v1:latest
+11/03/2024 06:09:17 PM - setup - INFO : Current llm model use jcai/llama3-taide-lx-8b-chat-alpha1:Q4_K_M
+11/03/2024 06:09:32 PM - setup - INFO : neo4j connecting...
+11/03/2024 06:09:32 PM - setup - INFO : build graph store: bolt://localhost:7687

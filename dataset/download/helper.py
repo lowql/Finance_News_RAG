@@ -2,8 +2,9 @@ import pandas as pd
 from os import listdir
 from os.path import isfile, join
 from datetime import datetime
-folder_path = r"dataset\download"
-record_file = r"dataset\download\record.txt"
+from pathlib import Path 
+folder_path = Path("dataset/download") 
+record_file = Path("dataset/download/record.txt")
 def check_code_range(file='6125_history_news.csv'):
     code = file.split('_')[0]
     print(f"file is {join(folder_path,file)}")

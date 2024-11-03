@@ -127,7 +127,32 @@ def test_set_summary_by_llm():
 def test_build_news_with_vector():
     print("test_build_news_with_vector")
     [build_News(code) for code in codes]
-    
+
+def test_make_rel_of_embedding_news():
+    cypher = """
+    match(n:`新聞`)
+    with n.name as headline,n as news
+    match (em:`__Node__`)
+    where em.embedding is not null and em.headline = headline
+    merge (em)-[r:`根據`]->(news)
+    """
+    graph_store.structured_query(cypher)
+    #移出重複生成的embedding nodes
+    cypher = """
+    // 首先找出要刪除的節點
+    MATCH (s1)-[r1:`根據`]->(t1)
+    MATCH (s2)-[r2:`根據`]->(t2)
+    WHERE s1.headline = s2.headline 
+    AND s1.content = s2.content
+    AND s1.id > s2.id  // 確保只刪除ID較大的節點，保留最早的節點
+    WITH COLLECT(DISTINCT s1) as nodesToDelete
+
+    // 刪除這些節點的關係和節點
+    UNWIND nodesToDelete as nodeToDelete
+    OPTIONAL MATCH (nodeToDelete)-[r]-()
+    DELETE r, nodeToDelete
+    """
+    graph_store.structured_query(cypher)
 """ 自動使用 LLM 建立 KG """
 auto_pg_builder = AutoBuildPropertyGraph()
 def test_auto_builder():

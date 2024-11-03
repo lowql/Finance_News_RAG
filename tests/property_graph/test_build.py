@@ -4,7 +4,7 @@ from dataset.download.helper import read_record
 from setup import get_graph_store,setup_logging
 graph_store = get_graph_store()
 codes = read_record()
-logger = setup_logging(log_file="build.log")
+logger = setup_logging()
 
 """ 手工建立 KG """
 manual_pg_builder = ManualBuildPropertyGraph()

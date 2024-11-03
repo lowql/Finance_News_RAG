@@ -4,7 +4,6 @@ from dataset.download.helper import read_record
 from setup import get_graph_store,setup_logging
 graph_store = get_graph_store()
 codes = read_record()
-logger = setup_logging()
 
 """ 手工建立 KG """
 manual_pg_builder = ManualBuildPropertyGraph()
@@ -14,11 +13,11 @@ def test_build_news_mention_company():
     set n :__Node__
     return n"""
     graph_store.structured_query(cypher)
-    logger.info("test_build_news_mention_company")
+    print("test_build_news_mention_company")
     
 def test_build_company_rel():
     [manual_pg_builder.company_rel_company(code) for code in codes]
-    logger.info("test_build_company_rel")
+    print("test_build_company_rel")
     
 def test_build_company_interaction_info_node():
     cypher = """
@@ -30,7 +29,7 @@ with n as company, n.name + "的" + type(r) + "是" + c.name as interaction
 merge (company)-[:`背景知識`]->(:`公司互動` {info:interaction})
     """
     graph_store.structured_query(cypher)
-    logger.info("test_build_company_interaction_info_node")
+    print("test_build_company_interaction_info_node")
 
     
 """ 手工建立 fulltext index """
@@ -44,7 +43,7 @@ options {
 }
     """
     graph_store.structured_query(cypher)
-    logger.info("test_create_fulltext_index")
+    print("test_create_fulltext_index")
 """ 手工使用 cypher 設定分類新聞類別 """
 def test_set_news_category():
     """
@@ -61,7 +60,7 @@ def test_set_news_category():
     """
     rows = graph_store.structured_query(cypher)
     [print(row) for row in rows]
-    logger.info("test_set_news_category")
+    print("test_set_news_category")
 
 """ 手工使用 cypher 設定公告消息類別 """
 def test_set_news_notice_category():
@@ -77,7 +76,7 @@ def test_set_news_notice_category():
     """
     rows = graph_store.structured_query(cypher)
     [print(row) for row in rows]
-    logger.info("test_set_news_notice_category")
+    print("test_set_news_notice_category")
 
 """ 手工使用 cypher 根據關鍵字分類新聞"""
 def test_set_news_keyword_category(keywords=["焦點股","盤中速報","熱門股","盤後速報","潛力股"]):
@@ -91,11 +90,11 @@ def test_set_news_keyword_category(keywords=["焦點股","盤中速報","熱門�
         """
         rows = graph_store.structured_query(cypher,param_map={'keyword':keyword})
         [print(row) for row in rows]
-        logger.info("test_set_news_keyword_category")
+        print("test_set_news_keyword_category")
 
 """ 自動使用 LLM 產生新聞摘要 """
 def test_set_summary_by_llm():
-    logger.info("test_set_summary_by_llm")
+    print("test_set_summary_by_llm")
     from storages.build.utils import gen_summary
     cypher = """
     MATCH (n:`新聞`)-[:`提及`]->(c:`公司`)
@@ -126,13 +125,13 @@ def test_set_summary_by_llm():
         
 """ 手工建立 vector node  """
 def test_build_news_with_vector():
-    logger.info("test_build_news_with_vector")
+    print("test_build_news_with_vector")
     [build_News(code) for code in codes]
     
 """ 自動使用 LLM 建立 KG """
 auto_pg_builder = AutoBuildPropertyGraph()
 def test_auto_builder():
-    logger.info("test_auto_builder")
+    print("test_auto_builder")
     for code in codes:
         print(f"stock id {code} run auto kg builder")
         auto_pg_builder.build_News_KG_use_dynamicPathExtractor(code)

@@ -4,7 +4,19 @@ from llama_index.core.schema import Document
 from setup import Transformations
 from setup import get_embed_model
 from llama_index.core.ingestion import IngestionPipeline
-
+def build_document(news_info):
+    document =Document(
+           text=news_info["text"],
+           metadata={
+            'headline':news_info["metadata"]['headline'],
+            'author':news_info["metadata"]['author'],
+            'time':news_info["metadata"]['time']
+            },
+           metadata_seperator="\n",
+           metadata_template="{key} : {value} ",
+           text_template="新聞的基本資訊:\n {metadata_str}\n\n 新聞內文:\n {content}",
+           )
+    return document
 class News:
     def __init__(self,code):
         self.code = code
@@ -127,7 +139,7 @@ class News:
             
         entities = [company_entity] + news_entities
         return entities,relations
-    def fetch_documnets(self):
+    def fetch_documents(self):
         documents = []
         for idx, content in enumerate(self.documents):
             documents.append(Document(

@@ -4,12 +4,41 @@ from flask import send_from_directory
 from waitress import serve  
 import os 
 import json
-from pipeline.news import News
+from pipeline.news import News,build_document
 from llama_index.core.response_synthesizers import ResponseMode
 from retrievers.pg_query import query_from_neo4j,summary_news
+from setup import setup_logging
+logger = setup_logging()
+logger.info("啟動 Flask server")
 app = Flask(__name__)
 
-
+def serialize_node(node):
+        # Extract relevant fields from NodeWithScore object
+        return {
+            'metadata':node.metadata,
+            'text': node.get_text(),
+            'score': str(node.get_score()),
+        }
+def response_generator(stream_response):
+        for text in stream_response.response_gen:
+            yield text
+            
+def rag_response(streaming=False,response=""):
+    if streaming:    
+        return Response(
+            response=response_generator(stream_response=response),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                # 'Connection': 'keep-alive' # AssertionError: Connection is a "hop-by-hop" header; it cannot be used by a WSGI application (see PEP 3333)
+            })
+    else:
+        return app.response_class(
+            response=response,
+            status=200,
+            mimetype='application/json'
+        )
+    
 @app.route("/",methods = ['GET','POST'],endpoint="welcome page")
 def index():
     return render_template('index.html',message="hello this is RAG Ollama")
@@ -28,21 +57,20 @@ def vector_retriever():
 def graph_retriever():
     return "graph_retriever from neo4j"
 
-@app.get("/companys")
+@app.get("/api/companys")
 def get_company_list():
     from pipeline import utils
     codes = utils.get_codes()
     return jsonify(codes)
 
-@app.get("/news/<int:stock_id>")
+@app.get("/api/news/<int:stock_id>")
 def get_news(stock_id):
     news = News(stock_id)
     contents = news.fetch_content()
     return jsonify(contents)
     
-@app.get("/query")
+@app.get("/api/query")
 def query_use_backend_data():
-    # http://localhost:5000/query?text="廣運的產品是?"
     query_text = request.args.get("text", None)
     print(f"Get Client Message: {query_text}")
     if query_text is None:
@@ -50,64 +78,35 @@ def query_use_backend_data():
             "No text found, please include a ?text=blah parameter in the URL",
             400,
         )
-    # response = pg_retriever_query(query_text,ResponseMode.REFINE)
-    stream_response = query_from_neo4j(query_txt=query_text,response_mode=ResponseMode.REFINE)
-    def response_generator():
-        for text in stream_response.response_gen:
-            yield text
-    if stream_response.source_nodes == []:
+    response = query_from_neo4j(query_txt=query_text,response_mode=ResponseMode.REFINE)
+    if response.source_nodes == []:
         return "目前尚未掌握相關資訊，故無法回應此問題"
-    return Response(
-        response=response_generator(),
-        mimetype='text/event-stream',
-        headers={
-            'Cache-Control': 'no-cache',
-            # 'Connection': 'keep-alive' # AssertionError: Connection is a "hop-by-hop" header; it cannot be used by a WSGI application (see PEP 3333)
-        })
+    serialized_nodes = [serialize_node(node) for node in response.source_nodes]
+    json_responese = json.dumps({'source_nodes':serialized_nodes,'responese':response.response},ensure_ascii=False)
+    return rag_response(response=json_responese)
     
-def serialize_node(node):
-        # Extract relevant fields from NodeWithScore object
-        return {
-            'metadata':node.metadata,
-            'text': node.get_text(),
-            'score': str(node.get_score()),
-        }
-@app.get("/query/summary")
+
+@app.post("/api/query/summary")
 def summary_frontend_data():
-    from pipeline.news import News
-    news = News(6125)
-    documents = news.fetch_documnets()
     query_text = request.args.get("text", None)
+    json_obj = request.get_json()
+    source_nodes = json_obj.get('source_nodes')
+    documents = []
+    for source_node in source_nodes:
+        documents.append(build_document(source_node))
     print(f"Get Client Message: {query_text}")
     if query_text is None:
         return (
             "No text found, please include a ?text=blah parameter in the URL",
             400,
         )
-    stream_response = summary_news(documents=documents[:3],query_txt=query_text)
-    if stream_response.source_nodes == [] :
+    response = summary_news(documents=documents,query_txt=query_text)
+    if response.source_nodes == [] :
         return json.dumps({'responese':"根據使用者提供的資料，無法回應使用者問題"},ensure_ascii=False)
-    serialized_nodes = [serialize_node(node) for node in stream_response.source_nodes]
-    json_responese = json.dumps({'source_nodes':serialized_nodes,'responese':stream_response.response},ensure_ascii=False)
+    serialized_nodes = [serialize_node(node) for node in response.source_nodes]
+    json_responese = json.dumps({'source_nodes':serialized_nodes,'responese':response.response},ensure_ascii=False)
+    return rag_response(response=json_responese)
     
-    def response_generator():
-        for text in stream_response.response_gen:
-            yield text
-    streaming = False
-    if streaming:    
-        return Response(
-            response=response_generator(),
-            mimetype='text/event-stream',
-            headers={
-                'Cache-Control': 'no-cache',
-                # 'Connection': 'keep-alive' # AssertionError: Connection is a "hop-by-hop" header; it cannot be used by a WSGI application (see PEP 3333)
-            })
-    else:
-        return app.response_class(
-            response=json_responese,
-            status=200,
-            mimetype='application/json'
-        )
 
 app.debug = True
 if __name__ == '__main__':

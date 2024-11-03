@@ -18,7 +18,7 @@ def build_News(code):
     vector_store = get_vector_store(node_label="新聞")
     from pipeline.news import News
     pipe = News(code)
-    documents = pipe.fetch_documnets()
+    documents = pipe.fetch_documents()
     # BUG: Noe4j 的 vector store 機制限制比較多，無法直接處理 ingestion pipline 產生的 nested maps structure 
    
     pipe.put_news_to_vector_store(documents=documents,vector_store=vector_store)

@@ -12,7 +12,7 @@ class AutoBuildPropertyGraph:
     def build_News_KG_use_dynamicPathExtractor(self,code):
         dynamic_extractor = Transformations().get_kg_dynamic_extractor()
         news = News(code)
-        documants = news.fetch_documnets()
+        documants = news.fetch_documents()
         doc_len = len(documants)
         for idx,document in enumerate(documants):
             try:
@@ -21,7 +21,7 @@ class AutoBuildPropertyGraph:
                     llm=get_llm(),
                     property_graph_store=self.graph_store,
                     kg_extractors=[dynamic_extractor],
-                    embed_kg_nodes=False,
+                    embed_kg_nodes=True, #本地跑會超花時間
                     show_progress=True,
                 )
                 print(f"{idx}/{doc_len} :: success extract news")

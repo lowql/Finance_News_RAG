@@ -21,7 +21,7 @@ class AutoBuildPropertyGraph:
                     llm=get_llm(),
                     property_graph_store=self.graph_store,
                     kg_extractors=[dynamic_extractor],
-                    embed_kg_nodes=True, #本地跑會超花時間
+                    embed_kg_nodes=False, #本地跑會超花時間
                     show_progress=True,
                 )
                 print(f"{idx}/{doc_len} :: success extract news")

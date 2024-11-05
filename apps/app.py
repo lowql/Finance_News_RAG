@@ -72,7 +72,7 @@ def get_news(stock_id):
 @app.get("/api/query")
 def query_use_backend_data():
     query_text = request.args.get("text", None)
-    print(f"Get Client Message: {query_text}")
+    logger.info(f"Neo4j query API Get Client Message: {query_text}")
     if query_text is None:
         return (
             "No text found, please include a ?text=blah parameter in the URL",
@@ -94,7 +94,7 @@ def summary_frontend_data():
     documents = []
     for source_node in source_nodes:
         documents.append(build_document(source_node))
-    print(f"Get Client Message: {query_text}")
+    logger.info(f"Summary API Get Client Message: {query_text}")
     if query_text is None:
         return (
             "No text found, please include a ?text=blah parameter in the URL",

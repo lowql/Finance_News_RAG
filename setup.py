@@ -100,7 +100,7 @@ class Provider():
 
     def get_reranker(self,rerank_top_n=3):
         rerank_model = "BAAI/bge-reranker-large"
-        print(f"============= Current rerank model use {rerank_model} ==============")
+        logger.info(f"============= Current rerank model use {rerank_model} ==============")
         rerank = SentenceTransformerRerank(model=rerank_model,top_n=rerank_top_n)
         return rerank
 provider = Provider()
@@ -262,30 +262,33 @@ class Transformations:
         return CustomNewExtractor()
 
 class GraphStore():
-    def __init__(self):
-        self.is_connecting = True
-        self.connection_status = "init connection"
-        progress_thread = threading.Thread(target=self._show_progress)
-        progress_thread.start()
-        
-        try:
-            logger.info("neo4j connecting...")
-            self.connection_status = "connecting graph store"
-            self.graph_store = self.get_graph_store()
-            logger.info("graph store build done")
-            self.connection_status = "connecting vector store"
-            self.vector_store = self.get_vector_store(node_label="__Node__")
-            logger.info("vector store build done")
-            logger.info("neo4j connecting done")
-            
-            logger.info("index building")
-            self.connection_status = "building index"
-            self.index = self.get_property_graph_index_from_existing()
-            logger.info("index building done")
-        finally:
-            # 完成後停止進度顯示
-            self.is_connecting = False
-            progress_thread.join()
+    _instance = None # 單例設計模式
+    def __new__(cls):
+        if cls._instance is None:
+            logger.info("初始化 GraphStore 實例...")
+            cls._instance = super().__new__(cls)
+            cls._instance.is_connecting = True
+            cls._instance.connection_status = "init connection"
+            progress_thread = threading.Thread(target=cls._instance._show_progress)
+            progress_thread.start()
+            try:
+                logger.info("neo4j connecting...")
+                cls._instance.connection_status = "connecting graph store"
+                cls._instance.graph_store = cls._instance.get_graph_store()
+                logger.info("graph store build done")
+                cls._instance.connection_status = "connecting vector store"
+                cls._instance.vector_store = cls._instance.get_vector_store(node_label="__Node__")
+                
+                logger.info("index building")
+                cls._instance.connection_status = "building index"
+                cls._instance.index = cls._instance.get_property_graph_index_from_existing()
+            finally:
+                # 完成後停止進度顯示
+                cls._instance.is_connecting = False
+                progress_thread.join()
+        else:
+            logger.info("使用現有的 GraphStore 實例")
+        return cls._instance
     
     def _show_progress(self):
         spinner = cycle(['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'])
@@ -299,6 +302,7 @@ class GraphStore():
             username=Neo4j_USER,
             password=Neo4j_PWD,
             url=Neo4j_URI,
+            refresh_schema=False
         )
 
     def get_vector_store(self,**kwargs):

@@ -172,6 +172,7 @@ if __name__ == "__main__":
     test_set_news_notice_category()
     test_set_news_keyword_category()
     test_build_news_with_vector()
+    test_make_rel_of_embedding_news()
     
     # test_set_summary_by_llm()
     test_auto_builder()

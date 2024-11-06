@@ -81,7 +81,7 @@ def query_use_backend_data():
         )
     response = query_from_neo4j(query_txt=query_text,response_mode=ResponseMode.REFINE)
     if response.source_nodes == []:
-        return "目前尚未掌握相關資訊，故無法回應此問題"
+        return json.dumps({'response':"根據資料庫現有的資料，無法回應使用者問題"},ensure_ascii=False)
     serialized_nodes = [serialize_node(node) for node in response.source_nodes]
     json_response = json.dumps({'source_nodes':serialized_nodes,'response':response.response},ensure_ascii=False)
     return rag_response(response=json_response)
@@ -103,7 +103,7 @@ def summary_frontend_data():
         )
     response = summary_news(documents=documents,query_txt=query_text)
     if response.source_nodes == [] :
-        return json.dumps({'response':"根據使用者提供的資料，無法回應使用者問題"},ensure_ascii=False)
+        return json.dumps({'response':"無法回應此問題，可能是使用者查詢要求(例如:整理新聞)過於籠統，或是當前提供的新聞不足以回應查詢問題"},ensure_ascii=False)
     serialized_nodes = [serialize_node(node) for node in response.source_nodes]
     json_response = json.dumps({'source_nodes':serialized_nodes,'response':response.response},ensure_ascii=False)
     return rag_response(response=json_response)

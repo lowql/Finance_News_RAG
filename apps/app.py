@@ -83,8 +83,8 @@ def query_use_backend_data():
     if response.source_nodes == []:
         return "目前尚未掌握相關資訊，故無法回應此問題"
     serialized_nodes = [serialize_node(node) for node in response.source_nodes]
-    json_responese = json.dumps({'source_nodes':serialized_nodes,'responese':response.response},ensure_ascii=False)
-    return rag_response(response=json_responese)
+    json_response = json.dumps({'source_nodes':serialized_nodes,'response':response.response},ensure_ascii=False)
+    return rag_response(response=json_response)
     
 
 @app.post("/api/query/summary")
@@ -103,10 +103,10 @@ def summary_frontend_data():
         )
     response = summary_news(documents=documents,query_txt=query_text)
     if response.source_nodes == [] :
-        return json.dumps({'responese':"根據使用者提供的資料，無法回應使用者問題"},ensure_ascii=False)
+        return json.dumps({'response':"根據使用者提供的資料，無法回應使用者問題"},ensure_ascii=False)
     serialized_nodes = [serialize_node(node) for node in response.source_nodes]
-    json_responese = json.dumps({'source_nodes':serialized_nodes,'responese':response.response},ensure_ascii=False)
-    return rag_response(response=json_responese)
+    json_response = json.dumps({'source_nodes':serialized_nodes,'response':response.response},ensure_ascii=False)
+    return rag_response(response=json_response)
     
 
 app.debug = True

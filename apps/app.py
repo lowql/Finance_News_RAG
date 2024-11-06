@@ -8,10 +8,11 @@ from pipeline.news import News,build_document
 from llama_index.core.response_synthesizers import ResponseMode
 from retrievers.pg_query import query_from_neo4j,summary_news
 from setup import setup_logging
+from flask_cors import CORS
 logger = setup_logging()
 logger.info("啟動 Flask server")
 app = Flask(__name__)
-
+CORS(app)
 def serialize_node(node):
         # Extract relevant fields from NodeWithScore object
         return {
